@@ -149,6 +149,15 @@ def rigger_pages():
         cmds.parent(ctrl, rig_grp)
         all_controls.append(ctrl)
     
+    # Si `Pages_GRP` existe mais est vide, le supprimer
+    if cmds.objExists("Pages_GRP"):
+        descendants = cmds.listRelatives("Pages_GRP", allDescendents=True) or []
+        if len(descendants) == 0:
+            try:
+                cmds.delete("Pages_GRP")
+            except Exception:
+                pass
+
     return all_controls
 
 
