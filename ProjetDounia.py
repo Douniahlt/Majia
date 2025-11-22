@@ -245,8 +245,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         # Appliquer une courbe spline pour un mouvement + fluide (pas linéaire)
         #'spline' crée une interpolation douce (courbe en S)
         # 'linear' serait une transition à vitesse constante (moins naturel)
-        cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), 
-                       inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), inTangentType='spline', outTangentType='spline')
         
         # ANIMATION DE TRANSLATION Y (hauteur)
         
@@ -255,8 +254,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         cmds.setKeyframe(ctrl, attribute='translateY', value=y_end, time=frame_fin)
         
         # Courbe fluide pour la descente
-        cmds.keyTangent(ctrl, attribute='translateY', time=(frame_actuelle, frame_fin),
-                       inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='translateY', time=(frame_actuelle, frame_fin), inTangentType='spline', outTangentType='spline')
         
         # VARIATION ALÉATOIRE EN Z
         
@@ -316,8 +314,7 @@ def ralentir_pages(frame_debut_ralentissement, duree_ralentissement=30):
         # Détection des pages en mouvement :
         # On cherche s'il existe des keyframes après la frame de ralentissement
         # Si oui, cette page est encore en train de tourner et doit être ralentie
-        keyframes_rotate = cmds.keyframe(ctrl, attribute='rotateX', query=True, 
-                                        time=(frame_debut_ralentissement, 100000))
+        keyframes_rotate = cmds.keyframe(ctrl, attribute='rotateX', query=True, time=(frame_debut_ralentissement, 100000))
         
         # Si des keyframes existent après cette frame
         if keyframes_rotate and len(keyframes_rotate) > 0:
@@ -340,9 +337,7 @@ def ralentir_pages(frame_debut_ralentissement, duree_ralentissement=30):
             # Appliquer une tangente linéaire pour un ralentissement progressif
             # On utilise 'linear' plutôt que 'spline' pour un ralentissement uniforme
             # 'spline' créerait une courbe qui pourrait faire bouger un peu la page
-            cmds.keyTangent(ctrl, attribute='rotateX', 
-                           time=(frame_debut_ralentissement, frame_fin),
-                           outTangentType='linear')
+            cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
         
         # TRAITEMENT DE LA TRANSLATION Y (même logique)
         
@@ -354,23 +349,18 @@ def ralentir_pages(frame_debut_ralentissement, duree_ralentissement=30):
             cmds.cutKey(ctrl, attribute='translateY', time=(frame_debut_ralentissement + 0.01, 100000))
             frame_fin = frame_debut_ralentissement + duree_ralentissement
             cmds.setKeyframe(ctrl, attribute='translateY', value=y_actuelle, time=frame_fin)
-            cmds.keyTangent(ctrl, attribute='translateY',
-                           time=(frame_debut_ralentissement, frame_fin),
-                           outTangentType='linear')
+            cmds.keyTangent(ctrl, attribute='translateY', time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
         
         # TRAITEMENT DE LA ROTATION Z (même logique)
         
-        keyframes_rotatez = cmds.keyframe(ctrl, attribute='rotateZ', query=True,
-                                         time=(frame_debut_ralentissement, 100000))
+        keyframes_rotatez = cmds.keyframe(ctrl, attribute='rotateZ', query=True, time=(frame_debut_ralentissement, 100000))
         
         if keyframes_rotatez and len(keyframes_rotatez) > 0:
             rotatez_actuelle = cmds.getAttr(f"{ctrl}.rotateZ", time=frame_debut_ralentissement)
             cmds.cutKey(ctrl, attribute='rotateZ', time=(frame_debut_ralentissement + 0.01, 100000))
             frame_fin = frame_debut_ralentissement + duree_ralentissement
             cmds.setKeyframe(ctrl, attribute='rotateZ', value=rotatez_actuelle, time=frame_fin)
-            cmds.keyTangent(ctrl, attribute='rotateZ',
-                           time=(frame_debut_ralentissement, frame_fin),
-                           outTangentType='linear')
+            cmds.keyTangent(ctrl, attribute='rotateZ',time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
     
     # Mettre à jour la timeline pour refléter la nouvelle durée
     # +10 frames de marge à la fin
