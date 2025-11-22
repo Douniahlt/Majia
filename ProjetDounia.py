@@ -369,5 +369,5 @@ def ralentir_pages(frame_debut_ralentissement, duree_ralentissement=30):
 
 creer_pages(nombre_pages=50)
 rigger_pages()
-animer_pages(nombre_pages_a_tourner=25, frame_debut=1, duree_par_page=10, acceleration=True)
+animer_pages(nombre_pages_a_tourner=25, frame_debut=10, duree_par_page=10, acceleration=True)
 ralentir_pages(frame_debut_ralentissement=100, duree_ralentissement=40)
