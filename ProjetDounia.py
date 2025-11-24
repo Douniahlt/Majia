@@ -24,7 +24,7 @@ def creer_pages(nombre_pages):
         
         # Créer un cube plat pour représenter une page
         # [0] récupère le transform node
-        page = cmds.polyCube(name=f"Page_{i+1:02d}", w=width, h=0.02, d=depth)[0]
+        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=0.02, d=depth)[0]
         
         # Positionner chaque page en hauteur pour créer la pile
         # L'espacement de 0.015 crée l'épaisseur de la pile
@@ -160,7 +160,6 @@ def rigger_pages():
 
     return all_controls
 
-
 def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acceleration=True):
     """
     Anime les pages qui tournent via leur rig
@@ -189,7 +188,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     # Prendre les dernières pages
     # Par exemple : si on a 50 pages et nombre_pages_a_tourner=15
     # On prend Page_36_CTRL à Page_50_CTRL 
-    controls_a_animer = all_controls[-nombre_pages_a_tourner:]
+    controls_a_animer = all_controls[(-nombre_pages_a_tourner-1):]
     
     # Inverser l'ordre pour commencer par la page la plus haute
     # Maintenant : Page_50_CTRL, Page_49_CTRL, ..., Page_36_CTRL
@@ -207,10 +206,28 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     frame_actuelle = frame_debut
     
     # BOUCLE D'ANIMATION DE CHAQUE PAGE
-    
+    # le temps augmente progressivement selon l’indice
+
+    M = len(controls_a_animer)
+    power = 10.6  # >1 = ralentissement plus marqué vers la fin
+
+    # Sécurité
+    if M <= temps_minimum_animation_page:
+        durations = [max(temps_minimum_animation_page, int(duree_lente))] * M
+    else:
+        durations = []
+        for i in range(M):
+            t = (i / (M - 1)) ** power   # interpolation non linéaire
+            dur = duree_normale + (duree_lente - duree_normale) * t
+            durations.append(max(1, int(round(dur))))
+    print("Durations list:", durations)
+
+    # puis dans ta boucle d'animation, au lieu de calculer `duree` :
     for i, ctrl in enumerate(controls_a_animer):
+        duree = durations[i]
+    #for i, ctrl in enumerate(controls_a_animer):
         # CALCUL DE LA DURÉE D'ANIMATION
-        
+        '''
         if acceleration:
             # Facteur d'accélération : commence à 0.3 (rapide) et va jusqu'à 1.0 (+lent)
             # i / len(controls_a_animer) donne un pourcentage de progression (0 à 1)
@@ -222,6 +239,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         else:
             # Pas d'accélération : toutes les pages prennent le même temps
             duree = duree_par_page
+        '''
         
         # CALCUL DE LA POSITION Y DE FIN
         
@@ -282,92 +300,53 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale)
 
 
-def ralentir_pages(frame_debut_ralentissement, duree_ralentissement=30):
-    """
-    Ralentit progressivement l'animation des pages jusqu'à l'arrêt complet
-    
-    LOGIQUE :
-    - Trouve toutes les pages qui ont encore des keyframes après frame_debut_ralentissement
-    - Pour chaque page en mouvement :
-      1. Récupère sa rotation/position actuelle à frame_debut_ralentissement
-      2. Supprime toutes les keyframes futures (après cette frame)
-      3. Crée une nouvelle keyframe de fin à frame_debut_ralentissement + duree_ralentissement
-      4. La valeur de cette keyframe est la même que celle de départ
-      5. Résultat : la page "gèle" progressivement sa rotation/position actuelle
-    """
-    
-    # Vérifier que le rig existe
-    if not cmds.objExists("Pages_RIG_GRP"):
-        return
-    
-    # Récupérer tous les contrôleurs
-    all_controls = cmds.listRelatives("Pages_RIG_GRP", children=True, type='transform')
-    if not all_controls:
-        return
-    
-    # Parcourir chaque contrôleur pour modifier son animation
-    # On traite chaque contrôleur individuellement
-    # Car certaines pages peuvent être immobiles, d'autres en mouvement
-    for ctrl in all_controls:
-        # TRAITEMENT DE LA ROTATION X
-        
-        # Détection des pages en mouvement :
-        # On cherche s'il existe des keyframes après la frame de ralentissement
-        # Si oui, cette page est encore en train de tourner et doit être ralentie
-        keyframes_rotate = cmds.keyframe(ctrl, attribute='rotateX', query=True, time=(frame_debut_ralentissement, 100000))
-        
-        # Si des keyframes existent après cette frame
-        if keyframes_rotate and len(keyframes_rotate) > 0:
-            # Récupérer la valeur de rotation actuelle à frame_debut_ralentissement
-            # time=... évalue l'attribut à cette frame spécifique
-            rotation_actuelle = cmds.getAttr(f"{ctrl}.rotateX", time=frame_debut_ralentissement)
-            
-            # Supprimer toutes les keyframes futures sur rotateX
-            # cutKey supprime les keyframes dans la plage de temps spécifiée
-            # +0.01 pour ne pas supprimer la keyframe actuelle
-            cmds.cutKey(ctrl, attribute='rotateX', time=(frame_debut_ralentissement + 0.01, 100000))
-            
-            # Calculer la frame de fin du ralentissement
-            frame_fin = frame_debut_ralentissement + duree_ralentissement
-            
-            # Créer une nouvelle keyframe à frame_fin avec la valeur actuelle
-            # La page va donc "geler" progressivement à cette rotation
-            cmds.setKeyframe(ctrl, attribute='rotateX', value=rotation_actuelle, time=frame_fin)
-            
-            # Appliquer une tangente linéaire pour un ralentissement progressif
-            # On utilise 'linear' plutôt que 'spline' pour un ralentissement uniforme
-            # 'spline' créerait une courbe qui pourrait faire bouger un peu la page
-            cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
-        
-        # TRAITEMENT DE LA TRANSLATION Y (même logique)
-        
-        keyframes_translate = cmds.keyframe(ctrl, attribute='translateY', query=True,
-                                           time=(frame_debut_ralentissement, 100000))
-        
-        if keyframes_translate and len(keyframes_translate) > 0:
-            y_actuelle = cmds.getAttr(f"{ctrl}.translateY", time=frame_debut_ralentissement)
-            cmds.cutKey(ctrl, attribute='translateY', time=(frame_debut_ralentissement + 0.01, 100000))
-            frame_fin = frame_debut_ralentissement + duree_ralentissement
-            cmds.setKeyframe(ctrl, attribute='translateY', value=y_actuelle, time=frame_fin)
-            cmds.keyTangent(ctrl, attribute='translateY', time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
-        
-        # TRAITEMENT DE LA ROTATION Z (même logique)
-        
-        keyframes_rotatez = cmds.keyframe(ctrl, attribute='rotateZ', query=True, time=(frame_debut_ralentissement, 100000))
-        
-        if keyframes_rotatez and len(keyframes_rotatez) > 0:
-            rotatez_actuelle = cmds.getAttr(f"{ctrl}.rotateZ", time=frame_debut_ralentissement)
-            cmds.cutKey(ctrl, attribute='rotateZ', time=(frame_debut_ralentissement + 0.01, 100000))
-            frame_fin = frame_debut_ralentissement + duree_ralentissement
-            cmds.setKeyframe(ctrl, attribute='rotateZ', value=rotatez_actuelle, time=frame_fin)
-            cmds.keyTangent(ctrl, attribute='rotateZ',time=(frame_debut_ralentissement, frame_fin), outTangentType='linear')
-    
-    # Mettre à jour la timeline pour refléter la nouvelle durée
-    # +10 frames de marge à la fin
-    cmds.playbackOptions(maxTime=frame_debut_ralentissement + duree_ralentissement + 10)
+# Temps total de l'animation(modifiable)
+Temps_total = 150
 
+#(modifiable)
+nombre_pages = 50
 
-creer_pages(nombre_pages=50)
+#(modifiable) mais laisser le -1
+nombre_pages_a_tourner=25-1
+# Temps avant ouverture grimoire (modifiable)
+frame_debut=10
+
+# Pas moins de 4 sinon les pages on pas assez de temps pour tourner (pas touche !)
+temps_minimum_animation_page = 4
+
+# Calcul du nombre d'images pour tourner une page
+duree_par_page=(Temps_total-frame_debut)//nombre_pages_a_tourner
+
+#print("durées pages :", duree_par_page)
+
+# Sécurité : pour que chaque page ait le temps minimum pour tourner
+# Si t'as trop de pages à tourner par rapport au temps total on en tourne moins
+if(duree_par_page < temps_minimum_animation_page):
+    print("trop de pages à tourner pour le temps imparti")
+    # Nouvelle valeur (celle minimum)
+    duree_par_page = temps_minimum_animation_page
+    # Calcul du nombre de pages à tourner (le max qu'on puisse faire sans bug avec le temps qu'on nous a donné)
+    nombre_pages_a_tourner = (Temps_total - frame_debut) // temps_minimum_animation_page
+    #print("nombre_pages_a_tourner :",nombre_pages_a_tourner)
+    
+# Temps total des pages sans le temps avant l'ouverture du grimoire
+temps_total_mouvement = Temps_total - frame_debut
+
+# Dernier 1/10 des pages = ralenties
+nb_pages_lentes = max(1, nombre_pages_a_tourner // 10) #on peut changer le "10" pour modifier la proportion de pages ralenties mais faut changer les 20 % en 2* le nouveau nombre 
+nb_pages_normales = nombre_pages_a_tourner - nb_pages_lentes
+
+# Répartition du temps (20% pour pages lentes) donc les X dernières pages prennent 2 fois plus de temps
+temps_pages_lentes = int(temps_total_mouvement * 0.20)
+temps_pages_normales = temps_total_mouvement - temps_pages_lentes
+
+# Durée par page
+duree_normale = temps_pages_normales // nb_pages_normales
+duree_lente = temps_pages_lentes // nb_pages_lentes
+
+#print("Durée pages normales:", duree_normale)
+#print("Durée pages lentes:", duree_lente)
+
+creer_pages(nombre_pages)
 rigger_pages()
-animer_pages(nombre_pages_a_tourner=25, frame_debut=10, duree_par_page=10, acceleration=True)
-ralentir_pages(frame_debut_ralentissement=100, duree_ralentissement=40)
+animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
