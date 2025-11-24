@@ -22,7 +22,7 @@ sNoiseMax = 3
 smoothCrv = 1.75
 sampleCrv = 6.5
 
-papython = "plane"
+papython = "papython:papython_grp"
 target = "target_pt"
 
 lateToTarget = 10
