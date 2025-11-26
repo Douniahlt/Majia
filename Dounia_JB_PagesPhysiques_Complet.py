@@ -20,6 +20,9 @@ def creer_pages(nombre_pages):
     pages_grp = cmds.group(empty=True, name="Pages_GRP")
     all_pages = []
     
+    # Position fixe du bord de la reliure pour TOUTES les pages
+    reliure_z = 3.3  # Position fixe en Z du bord de la reliure
+    
     # Boucle pour créer chaque page
     for i in range(nombre_pages):
         # Variation aléatoire de la taille
@@ -37,11 +40,16 @@ def creer_pages(nombre_pages):
         # Petite variation aléatoire en X
         x_offset = random.uniform(-0.05, 0.05)
         
-        # Déplacer la page à sa position finale
-        cmds.move(x_offset, y_pos, 0, page)
+        # CALCUL DE LA POSITION EN Z POUR ALIGNER LE BORD DE RELIURE
+        # Comme le centre de la page est à z=0 par défaut et que depth varie,
+        # on doit décaler la page pour que son bord (depth/2) soit toujours à reliure_z
+        z_pos = reliure_z - depth/2
         
-        # Petite rotation aléatoire en Y pour que les pages ne soient pas parfaitement alignées
-        cmds.rotate(0, random.uniform(-2, 2), 0, page)
+        # Déplacer la page à sa position finale
+        cmds.move(x_offset, y_pos, z_pos, page)
+        
+        # PAS de rotation aléatoire en Y pour garder l'alignement du bord de reliure
+        # cmds.rotate(0, random.uniform(-2, 2), 0, page)
         
         # Parenter la page au groupe
         cmds.parent(page, pages_grp)
@@ -66,14 +74,15 @@ def creer_pages(nombre_pages):
             
         # On sélectionne la page sur laquelle ajouter un bend
         cmds.select(f"{une_page}")
-        bend = cmds.nonLinear(n="bend_"+str(i), type='bend')
+        bend_result = cmds.nonLinear(n="bend_"+str(i), type='bend')
+        bend_handle = bend_result[1]  # On récupère seulement le handle
         
         # Parenter le bend au groupe
-        cmds.parent(bend, bend_grp)
+        cmds.parent(bend_handle, bend_grp)
             
         # Déplacer et rotater le bend sur le bord de la page
-        cmds.move(pivot_x, pivot_y, pivot_z)
-        cmds.rotate(90, -90, -90)
+        cmds.move(pivot_x, pivot_y, pivot_z, bend_handle)
+        cmds.rotate(90, -90, -90, bend_handle)
         i = i + 1
 
     # CRÉATION DU MATÉRIAU BLANC POUR LES PAGES
