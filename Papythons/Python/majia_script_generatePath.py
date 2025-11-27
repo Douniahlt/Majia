@@ -5,11 +5,13 @@ from math import *
 
 # User inputs
 
-root = "root_ctrl"
+target = "target_pt"
 
 animStart = 1
 animEnd = 170
 fps = 24
+
+root = "root_anim"
 
 nbPaths = 5
 
@@ -22,10 +24,26 @@ sNoiseMax = 3
 smoothCrv = 1.75
 sampleCrv = 6.5
 
-papython = "papython:papython_grp"
-target = "target_pt"
-
 lateToTarget = 10
+
+papythonGrp = "all_papython_grp"
+papythonAnim = "papython_anim"
+meshToGenerate = "papython:papython_grp"
+
+LWing = "L_wing_msh"
+RWing = "R_wing_msh"
+
+velThreshold = .3
+angleMin = -65
+angleMax = 30
+wingSpeed = 4
+
+sMin = .2
+sMax = .4
+
+
+
+
 
 
 
@@ -37,7 +55,7 @@ attToNoise = [[cmds.rotate, "rotateX", rNbFrames, -180, 180],
               [cmds.rotate, "rotateY", rNbFrames, -180, 180],
               [cmds.rotate, "rotateZ", rNbFrames, -180, 180],
               [cmds.scale, "scaleX", sNbFrames, sNoiseMin, sNoiseMax]]
-
+root = root + "_ctrl"
 
 
 
@@ -158,25 +176,104 @@ def orientToVel(follower, posListe):
         cmds.rotate(rotX, rotY, rotZ, follower, a=True)
         cmds.setKeyframe(follower, at="rotate")
 
+    return velListe
 
 
 
+def velNorm(coordonnees):
+    velnorm = sqrt(coordonnees[0]**2 + coordonnees[1]**2 + coordonnees[2]**2)
+    return velnorm
+
+def AnimWingsToVel(velListe, wingMesh, isRight):
+    # Si on anime l'aile droite, il faut inverser les angles de rotation de l'aile
+    bottom = angleMin
+    top =  angleMax
+    if(isRight):
+        bottom = -bottom
+        top = -top
+    # Cherche quand la vitesse est plus grande que le threshold d'anim
+    frame = animStart
+    while(frame < animEnd + 1):
+        vel = velNorm(velListe[frame - animStart])
+        if(vel < velThreshold):
+            # Si la vitesse est trop petite on va checker la frame suivante
+            frame += 1
+        else:
+            # Si la vitesse est assez grande, on anime l'aile tant que la vitesse reste assez grande
+            isTop = True
+            while(vel > velThreshold and frame < animEnd + 1):
+                # On place la clef à la frame actuel
+                cmds.currentTime(frame)
+                if(isTop):
+                    cmds.rotate(0, top, 0, wingMesh, a=True)
+                else:
+                    cmds.rotate(0, bottom, 0, wingMesh, a=True)
+                cmds.setKeyframe(wingMesh, at="rotate")
+                # On va à la frame où on placerait la clef suivante et on toggle isTop
+                frame += wingSpeed + randint(-2, 1)
+                isTop = not isTop
+                # On check si la nouvelle vitesse est toujours sous le threshold
+                if(frame < animEnd + 1):
+                    vel = velNorm(velListe[frame - animStart])
+            # Quand la vel passe sous le threshold on remet une clef à 0
+            cmds.currentTime(frame)
+            cmds.rotate(0, 0, 0, wingMesh, a=True)
+            cmds.setKeyframe(wingMesh, at="rotate")
+            # Puis on va checker la frame suivante
+            frame += 1
+
+
+            
+
+
+
+
+
+
+
+def prepMesh(mesh, nameRoot):
+    # Scale aléatoire
+    randS = uniform(sMin, sMax)
+    cmds.scale(randS, randS, randS, mesh)
+    # Tout mettre dans un groupe pour pas casser la hiérarchie
+    cmds.group(n=nameRoot, em=True, w=True)
+    cmds.parent(mesh, nameRoot)
 
 def bakeToMesh():
     # Liste de tous les points animés
     targetList = cmds.ls('placeHolder*', type='transform')
     # Copier le modèle sur chaque point
-    for target in targetList:
+    for i in range(len(targetList)):
+        number = str(i+1)
+        if(len(number) == 1):
+            number = "0" + number
+        nameMode = "papython" + number + "_grp"
+        nameAnim = papythonAnim + number + "_ctrl"
+        target = targetList[i]
         # Créer un nouvel examplaire du mesh à baker
-        cmds.duplicate(papython, n="wip")
+        cmds.duplicate(meshToGenerate, n=nameMode)
+        # Prep le nouveau mesh
+        prepMesh(nameMode, nameAnim)
         # Translate : placer les mesh sur le même translate que les points
-        posListe = followTarget("wip", target, 0)
+        posListe = followTarget(nameAnim, target, 0)
         # Rotate : orienter les mesh selon la vitesse
-        orientToVel("wip", posListe)
-        # Clean
-        newName = papython + target[-6:]
-        cmds.rename("wip", newName)
+        velListe = orientToVel(nameAnim, posListe)
+        # Anim les ailes en fonction de la vitesse
+        tofind = nameMode + "|" + RWing #nameMode + "|**|" + RWing
+        wingMesh = cmds.ls(tofind, r=True)
+        AnimWingsToVel(velListe, wingMesh, False)
+        tofind = nameMode + "|" + LWing
+        wingMesh = cmds.ls(tofind, r=True)
+        AnimWingsToVel(velListe, wingMesh, True)
+    # Clean
+    cmds.group(n=papythonGrp, em=True, w=True)
+    cmds.parent(cmds.ls(papythonAnim + "*", type='transform'), papythonGrp)
         
+
+
+
+
+
 
 
 
@@ -193,13 +290,13 @@ def main():
     # Placer les modèles de papythons sur les points animés
     bakeToMesh()
 
+    # Clean final
+    cmds.parent(root, papythonGrp)
+    cmds.hide(root)
+
     # Ré activer l'autokey s'il était activé au départ
     if(autokey):
         mel.eval("autoKeyframe -state 1;")
 
 
 main()
-
-
-# Retraiter les courbes pour qu'elles aient moins de clefs
-# Animer le roulis en Z selon la différence d'angle de la vitesse
