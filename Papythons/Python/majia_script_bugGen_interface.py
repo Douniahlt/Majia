@@ -15,6 +15,7 @@ ctrl = "_ctrl"
 grp = "_grp"
 GRP = "_GRP"
 
+
 # FONCTIONS UTILITAIRES
 
 # Fonction qui comprend les fps de maya et rend un entier
@@ -22,6 +23,16 @@ def GetFpsNumber(name):
     FPS_MAP = {"game": 15, "film": 24, "pal": 25, "ntsc": 30, "show": 48, "palf": 50, "ntscf": 60}
     fps = FPS_MAP.get(name, 24) # Renvoie la valeur trouver dans le dictionnaire ou 24 s'il n'y avait pas de correspondance
     return fps
+
+# Fonction qui active ou désactive des field
+def ToggleFields(isActive, textFieldList, intFieldList, floatFieldList):
+    for f in textFieldList:
+        cmds.textFieldGrp(f, edit=True, enable=isActive)
+    for f in intFieldList:
+        cmds.intSliderGrp(f, edit=True, enable=isActive)  
+    for f in floatFieldList:
+        cmds.floatSliderGrp(f, edit=True, enable=isActive)
+    return None
 
 # Calcul de la norme d'un vecteur : paramètre = liste de longueur 3
 def VecNorm(v):
@@ -173,6 +184,20 @@ def FollowTarget(follower, target, late, animStart, animEnd):
 ############################################################################################################################################
 
 
+# Prépare le mesh qu'on veut placer sur les places holders, en créant des copies et en les scalant aléatoirement
+def PrepMesh(mesh, nameRoot, sMin, sMax):
+
+    # Scale aléatoire
+    randS = uniform(sMin, sMax)
+    cmds.scale(randS, randS, randS, mesh)
+
+    # Tout mettre dans un groupe pour pas casser la hiérarchie
+    cmds.group(n=nameRoot, em=True, w=True)
+    cmds.parent(mesh, nameRoot)
+
+    return None
+
+
 # Rotate un mesh "follower" pour qu'il s'oriente selon sa vitesse
 def OrientToVel(follower, posListe, animStart, animEnd):
     # Crée la liste des vitesses
@@ -202,7 +227,7 @@ def OrientToVel(follower, posListe, animStart, animEnd):
 
 
 # Anime les ailes en fonction de la vitesse (si la vitesse est plus basse qu'un threshold donné par l'utilisateur, les ailes ne bougent pas)
-def AnimWingsToVel(velListe, wingMesh, isRight, angleMin, angleMax, animStart, animEnd, velThreshold, wingSpeed):
+def AnimWingsToAcc(accListe, wingMesh, isRight, angleMin, angleMax, animStart, animEnd, accThreshold, wingSpeed):
 
     # Init des angles extrêmaux de la rotation des ailes
     bottom = angleMin
@@ -216,9 +241,9 @@ def AnimWingsToVel(velListe, wingMesh, isRight, angleMin, angleMax, animStart, a
     frame = animStart
     while(frame < animEnd + 1):
 
-        vel = VecNorm(velListe[frame - animStart])
+        acc = VecNorm(accListe[frame - animStart])
 
-        if(vel < velThreshold):
+        if(acc < accThreshold):
             # Si la vitesse est trop petite on va checker la frame suivante
             frame += 1
 
@@ -226,7 +251,7 @@ def AnimWingsToVel(velListe, wingMesh, isRight, angleMin, angleMax, animStart, a
             # Si la vitesse est assez grande, on anime l'aile tant que la vitesse reste assez grande
             isTop = True # pour alterner entre l'angle vers le haut et vers le bas
 
-            while(vel > velThreshold and frame < animEnd + 1):
+            while(acc > accThreshold and frame < animEnd + 1):
 
                 # On place la clef à la frame actuel
                 cmds.currentTime(frame)
@@ -242,7 +267,7 @@ def AnimWingsToVel(velListe, wingMesh, isRight, angleMin, angleMax, animStart, a
 
                 # On check si on est toujours dans le frame range, puis si la nouvelle vitesse est toujours sous le threshold
                 if(frame < animEnd + 1):
-                    vel = VecNorm(velListe[frame - animStart])
+                    acc = VecNorm(accListe[frame - animStart])
 
             # Quand la vel passe sous le threshold on remet une clef à 0
             cmds.currentTime(frame)
@@ -255,22 +280,9 @@ def AnimWingsToVel(velListe, wingMesh, isRight, angleMin, angleMax, animStart, a
             return None
 
 
-# Prépare le mesh qu'on veut placer sur les places holders, en créant des copies et en les scalant aléatoirement
-def PrepMesh(mesh, nameRoot, sMin, sMax):
-
-    # Scale aléatoire
-    randS = uniform(sMin, sMax)
-    cmds.scale(randS, randS, randS, mesh)
-
-    # Tout mettre dans un groupe pour pas casser la hiérarchie
-    cmds.group(n=nameRoot, em=True, w=True)
-    cmds.parent(mesh, nameRoot)
-
-    return None
-
 
 # Crée un mesh pour chaque place holder et bake l'animation des place holders sur un controller parent du mesh
-def BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, velThreshold, wingSpeed, sMin, sMax):
+def BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, accThreshold, wingSpeed, sMin, sMax):
 
     # Liste de tous les places holders sur lesquels placer un mesh
     targetList = cmds.ls(phPref + "*", type="transform")
@@ -297,15 +309,16 @@ def BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animSt
         velListe = OrientToVel(nameAnim, posListe, animStart, animEnd)
 
         if(hasWings):  # Seulement si l'utilisateur veut animer les ailes
-            # Anim les ailes en fonction de la vitesse
+            # Anim les ailes en fonction de l'accélération (dérivée de la vitesse)
+            accListe = DerivVectorList(velListe)
             # Aile droite
             tofind = nameMode + "|" + RWing # Trouver le bon mesh de l'aile
             wingMesh = cmds.ls(tofind, r=True)
-            AnimWingsToVel(velListe, wingMesh, False, angleMin, angleMax, animStart, animEnd, velThreshold, wingSpeed)
+            AnimWingsToAcc(accListe, wingMesh, False, angleMin, angleMax, animStart, animEnd, accThreshold, wingSpeed)
             # Aile gauche
             tofind = nameMode + "|" + LWing
             wingMesh = cmds.ls(tofind, r=True)
-            AnimWingsToVel(velListe, wingMesh, True, angleMin, angleMax, animStart, animEnd, velThreshold, wingSpeed)
+            AnimWingsToAcc(accListe, wingMesh, True, angleMin, angleMax, animStart, animEnd, accThreshold, wingSpeed)
 
     # Clean = tout mettre dans un groupe principal
     cmds.group(n=mainGn, em=True, w=True)
@@ -343,8 +356,8 @@ def GetUserInputs():
     # Noise Frequencies
     rNoiseFreq = cmds.floatSliderGrp(rNoiseFreq_field, q=True, value=True)
     sNoiseFreq = cmds.floatSliderGrp(sNoiseFreq_field, q=True, value=True)
-    sNoiseMin = cmds.floatFieldGrp(sNoiseMin_field, q=True, value1=True)
-    sNoiseMax = cmds.floatFieldGrp(sNoiseMax_field, q=True, value1=True)
+    sNoiseMin = cmds.floatSliderGrp(sNoiseMin_field, q=True, value=True)
+    sNoiseMax = cmds.floatSliderGrp(sNoiseMax_field, q=True, value=True)
     # Nombres de keys qu'il faudra poser pour les aléatoires en fonction de ce qu'a choisi l'utilisateur
     rNbFrames = int((animEnd - animStart) / fps * rNoiseFreq)  # Pour la rotation
     sNbFrames = int((animEnd - animStart) / fps * sNoiseFreq)  # Pour le scaling
@@ -365,8 +378,8 @@ def GetUserInputs():
 
     # Récupère Mesh Animation Options
     meshToGenerate = cmds.textFieldGrp(meshToGenerate_field, q=True, text=True)
-    sMin = cmds.floatFieldGrp(sMin_field, q=True, value1=True)
-    sMax = cmds.floatFieldGrp(sMax_field, q=True, value1=True)
+    sMin = cmds.floatSliderGrp(sMin_field, q=True, value=True)
+    sMax = cmds.floatSliderGrp(sMax_field, q=True, value=True)
 
     # Récupère Wing Animation
     hasWings = cmds.checkBoxGrp(hasWings_field, q=True, value1=True)
@@ -374,16 +387,16 @@ def GetUserInputs():
     LWing = cmds.textFieldGrp(LWing_field, q=True, text=True)
     RWing = cmds.textFieldGrp(RWing_field, q=True, text=True)
 
-    velThreshold = cmds.floatFieldGrp(velThreshold_field, q=True, value1=True)
-    wingSpeed = cmds.intFieldGrp(wingSpeed_field, q=True, value1=True)
+    accThreshold = cmds.floatSliderGrp(accThreshold_field, q=True, value=True)
+    wingSpeed = cmds.intSliderGrp(wingSpeed_field, q=True, value=True)
     angleMin = cmds.floatSliderGrp(angleMin_field, q=True, value=True)
     angleMax = cmds.floatSliderGrp(angleMax_field, q=True, value=True)
 
     # Débug
-    print(mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, velThreshold, wingSpeed, angleMin, angleMax)
+    print(mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax)
 
     # Retourne tout
-    return mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, velThreshold, wingSpeed, angleMin, angleMax
+    return mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax
 
 
 ############################################################################################################################################
@@ -396,7 +409,7 @@ def BugFlowGen():
     autokey = bool(mel.eval('autoKeyframe -q -state;'))
     mel.eval("autoKeyframe -state 0;")
     
-    mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, velThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
+    mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
 
     # Update ou création = si le projet existe déjà, le supprimer pour le recréer
     ResetProject(mainGn)
@@ -408,7 +421,7 @@ def BugFlowGen():
     FollowTarget(rootPh, target, lateToTarget, animStart, animEnd)
 
     # Placer les modèles de papythons sur les points animés
-    BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, velThreshold, wingSpeed, sMin, sMax)
+    BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, accThreshold, wingSpeed, sMin, sMax)
 
     # Clean final
     cmds.parent(rootPh, mainGn) # Mettre le rig des place holder dans le groupe principal du projet
@@ -439,8 +452,8 @@ cmds.scrollLayout()
 
 # 0. General Options
 
-projectName_field = cmds.textFieldGrp(label="Project Name", text="Project")
-
+projectName_field = cmds.textFieldGrp(label="Project Name", text="DefaultProject")  # Les noms de groupes et controllers dépendront de ce nom
+                                                                                    # Il sert aussi à identifier si le projet existe déjà et qu'il faut le remplacer ou s'il faut juste le créer
 startTL = cmds.playbackOptions(q=True, min=True)
 animStart_field = cmds.intFieldGrp(label="Start Frame", value1=startTL)
 
@@ -454,17 +467,17 @@ fps_field = cmds.intFieldGrp(label="Frame Rate", value1=fpsTL)
 
 cmds.frameLayout(label="Random Motion Options", cll=True, mw=10)
 
-nbPaths_field = cmds.intSliderGrp(label="Number of Bugs", f=True, fmn=1, fmx=20, value=2)
+nbPaths_field = cmds.intSliderGrp(label="Number of Bugs", f=True, min=1, max=20, fmn=1, fmx=100, value=3)   # Nombre de mesh à animer
 
 # 1.a. Noises frequencies
 
 cmds.frameLayout(label="Noises Options", cll=True, mw=20)
 
-rNoiseFreq_field = cmds.floatSliderGrp(label="Rotation Noise Freq", f=True, fmn=0, fmx=1, value=1)
+rNoiseFreq_field = cmds.floatSliderGrp(label="Rotation Noise Freq", f=True, min=.001, max=2, fmn=.001, fmx=10, value=1, precision=3)  # Fréquence du noise sur la rotation des place holders autour de la cible
 
-sNoiseFreq_field = cmds.floatSliderGrp(label="Distance to Target Noise Freq", f=True, fmn=0, fmx=1, value=1)
-sNoiseMin_field = cmds.floatFieldGrp(label="Min Distance to Target", value1=1)
-sNoiseMax_field = cmds.floatFieldGrp(label="Max Distance to Target", value1=3)
+sNoiseFreq_field = cmds.floatSliderGrp(label="Distance to Target Noise Freq", f=True, min=.001, max=2, fmn=.001, fmx=10, value=1, precision=3) # Fréquence du noise sur l'éloignement puis rapprochement des place holders à la cible
+sNoiseMin_field = cmds.floatSliderGrp(label="Min Distance to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=1, precision=3)    # Rapprochement maximal
+sNoiseMax_field = cmds.floatSliderGrp(label="Max Distance to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=3, precision=3)    # Eloignement maximal
 
 cmds.setParent("..")
 
@@ -472,8 +485,8 @@ cmds.setParent("..")
 
 cmds.frameLayout(label="Noise Smoothing Options", cll=True, mw=20)
 
-smoothCrv_field = cmds.floatSliderGrp(label="Cutoff Frequency", f=True, fmn=.1, fmx=30, value=1.75)
-sampleCrv_field = cmds.floatSliderGrp(label="Sampling Rate", f=True, fmn=1, fmx=100, value=6.5)
+smoothCrv_field = cmds.floatSliderGrp(label="Cutoff Frequency", f=True, min=0, max=30, fmn=0, fmx=30, value=1.75, precision=3) # Niveau de smooth sur les courbes d'animation noisées (30 = pas smoothée, 0 = très smoothée)
+sampleCrv_field = cmds.floatSliderGrp(label="Sampling Rate", f=True, min=1, max=100, fmn=1, fmx=100, value=6.5, precision=3) # Niveau de simplification de la courbe, ie supprimer les clefs
 
 cmds.setParent("..")
 
@@ -483,8 +496,8 @@ cmds.setParent("..")
 
 cmds.frameLayout(label="Noise Smoothing Options", cll=True, mw=10)
 
-target_field = cmds.textFieldGrp(label="Target Name", text="target_lctr")
-lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, fmn=0, fmx=30, value=5) 
+target_field = cmds.textFieldGrp(label="Target Name", text="target_lctr")   # Nom du point que les mesh doivent suivrent
+lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, min=0, max=25, fmn=0, fmx=100, value=5) # Nombre de frames de retard de l'animation du la courbe
 
 cmds.setParent("..")
 
@@ -492,29 +505,32 @@ cmds.setParent("..")
 
 cmds.frameLayout(label="Mesh Animation Options", cll=True, mw=10)
 
-meshToGenerate_field = cmds.textFieldGrp(label="Mesh Name")
+meshToGenerate_field = cmds.textFieldGrp(label="Mesh/Group Mesh Name", text="papython:papython_grp")    # Nom du mesh sur lequel faire tourner la génération
 
-sMin_field = cmds.floatFieldGrp(label="Min Mesh Scale", value1=.2)
-sMax_field = cmds.floatFieldGrp(label="Max Mesh Scale", value1=.4)
+sMin_field = cmds.floatSliderGrp(label="Min Mesh Scale", f=True, min=0, max=5, fmn=0, fmx=1000, value=.2, precision=3) # Scaling minimal du mesh
+sMax_field = cmds.floatSliderGrp(label="Max Mesh Scale", f=True, min=0, max=5, fmn=0, fmx=1000, value=.4, precision=3) # Scaling maximal du mesh
 
 # 3.a. Wing Animation
 
 cmds.frameLayout(label="Wings Animation Options", cll=True, mw=20)
 
-hasWings_field = cmds.checkBoxGrp(label="Animate Wings", value1=True)
+hasWings_field = cmds.checkBoxGrp(label="Animate Wings", value1=True, changeCommand=(lambda x: ToggleFields(x, [LWing_field, RWing_field], [wingSpeed_field], [accThreshold_field, angleMin_field, angleMax_field])))   # Choisit s'il y a des ailes à animer ou non
 
-LWing_field = cmds.textFieldGrp(label="Left Wing Mesh Name", text="L_wing_msh")
+LWing_field = cmds.textFieldGrp(label="Left Wing Mesh Name", text="L_wing_msh") # Nom des ailes pour l'animation
 RWing_field = cmds.textFieldGrp(label="Right Wing Mesh Name", text="R_wing_msh")
 
-velThreshold_field = cmds.floatFieldGrp(label="Anim Acc Threshold", value1=.15)
-wingSpeed_field = cmds.intFieldGrp(label="Wings Speed", value1=4)
-angleMin_field = cmds.floatSliderGrp(label="Wings Down Position Angle", f=True, fmn=-180, fmx=0, value=-65)
-angleMax_field = cmds.floatSliderGrp(label="Wings Up Position Angle", f=True, fmn=0, fmx=180, value=50)
+accThreshold_field = cmds.floatSliderGrp(label="Anim Accel Threshold", f=True, min=0, max=1, fmn=0, fmx=1000, value=.075, precision=3) # Vitesse à partir de laquelle les ailes sont animées
+wingSpeed_field = cmds.intSliderGrp(label="Wing Mouvement Duration", f=True, min=1, max=10, fmn=1, fmx=1000, value=4)    # Nombre de frames entre les deux positions d'animation des ailes
+angleMin_field = cmds.floatSliderGrp(label="Wings Down Position Angle", f=True, min=-180, max=0, fmn=-180, fmx=0, value=-65, precision=3) # Angle pour la position extrêmale basse des ailes
+angleMax_field = cmds.floatSliderGrp(label="Wings Up Position Angle", f=True, min=0, max=180, fmn=0, fmx=180, value=50, precision=3) # Position extrêmale haute
 
 cmds.setParent(parent)
 
 # 4. Buttons
 
-cmds.button(label="Generate", command=lambda x: BugFlowGen())
+cmds.button(label="Generate or Update", command=lambda x: BugFlowGen())
+cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
+cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
+cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
 
 cmds.showWindow(window)
