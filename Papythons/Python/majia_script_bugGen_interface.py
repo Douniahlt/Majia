@@ -24,6 +24,14 @@ def GetFpsNumber(name):
     fps = FPS_MAP.get(name, 24) # Renvoie la valeur trouver dans le dictionnaire ou 24 s'il n'y avait pas de correspondance
     return fps
 
+# Fonction qui trouve un mesh en ignorant les namespaces
+def FindNodeIgnoreNamespace(name):
+    scene = cmds.ls(type="transform")
+    for node in scene:
+        if node.split(":")[-1] == name:
+            return node
+    return None
+
 # Fonction qui active ou désactive des field
 def ToggleFields(isActive, textFieldList, intFieldList, floatFieldList):
     for f in textFieldList:
@@ -70,12 +78,65 @@ def DerivVectorList(posListe):
 
 # Si le projet existe déjà, le supprimer pour le recréer
 def ResetProject(mainGn):
-    allTransfL = cmds.ls(type="transform")  # Liste de tous les groupes dans la scène
+    scene = cmds.ls(type="transform")  # Liste de tous les groupes dans la scène
 
-    if(mainGn in allTransfL):
+    if(mainGn in scene):
         cmds.delete(mainGn)
 
     return None
+
+def CheckProjectValid():
+    scene = cmds.ls(type="transform")
+
+    # Vérifier que le nom du projet n'est pas vide
+    projectName = cmds.textFieldGrp(projectName_field, q=True, text=True)
+    if (projectName == ""):
+        return False, "Project must have a name."
+
+    animStart = cmds.intFieldGrp(animStart_field, q=True, value1=True)
+    animEnd = cmds.intFieldGrp(animEnd_field, q=True, value1=True)
+
+    if(animEnd <= animStart):
+        return False, "Frame Range is not valid."
+
+    # Vérifier que le fps est possible
+    fps = cmds.intFieldGrp(fps_field, q=True, value1=True)
+    if(fps <= 0):
+        return False, "Frame Rate is not valid."
+
+    # Vérifier que la target existe
+    target = cmds.textFieldGrp(target_field, q=True, text=True)
+    if not(target in scene):
+        return False, "The specified target could not be found."
+
+    # Vérifier que le mesh existe
+    meshToGenerate = cmds.textFieldGrp(meshToGenerate_field, q=True, text=True)
+    if not(meshToGenerate in scene):
+        return False, "The specified Mesh/Group Mesh could not be found."
+
+    # Si l'utilisateur veut animer les ailes
+    hasWings = cmds.checkBoxGrp(hasWings_field, q=True, value1=True)
+    if(hasWings):
+
+        # Vérifier que le mesh de l'aile gauche existe
+        LWing = cmds.textFieldGrp(LWing_field, q=True, text=True)
+        LWingName = FindNodeIgnoreNamespace(LWing)
+        if not LWingName:
+            return False, "The specified Left Wing Mesh could not be found."
+        print("For Left Wing taking: ", LWingName)
+        
+        # Vérifier que le mesh de l'aile droite existe
+        RWing = cmds.textFieldGrp(RWing_field, q=True, text=True)
+        RWingName = FindNodeIgnoreNamespace(RWing)
+        if not RWingName:
+            return False, "The specified Right Wing Mesh does could not be found."
+        print("For Right Wing taking: ", RWingName)
+
+        wingSpeed = cmds.intSliderGrp(wingSpeed_field, q=True, value=True)
+        if(wingSpeed <= 0):
+            return False, "Wing Speed needs to be strictly positive."
+
+    return True, "Project was successfully launched."
 
 
 ############################################################################################################################################
@@ -405,10 +466,18 @@ def GetUserInputs():
 
 def BugFlowGen():
 
+    # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
+    isValid, error = CheckProjectValid()
+    if not isValid:
+        print(error)
+        return None
+    print(error)
+
     # Garder en mémoire l'était de l'autokey et le désactiver
     autokey = bool(mel.eval('autoKeyframe -q -state;'))
     mel.eval("autoKeyframe -state 0;")
     
+    # Récupérer les inputs de l'utilisateur
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
 
     # Update ou création = si le projet existe déjà, le supprimer pour le recréer
@@ -521,16 +590,16 @@ RWing_field = cmds.textFieldGrp(label="Right Wing Mesh Name", text="R_wing_msh")
 
 accThreshold_field = cmds.floatSliderGrp(label="Anim Accel Threshold", f=True, min=0, max=1, fmn=0, fmx=1000, value=.075, precision=3) # Vitesse à partir de laquelle les ailes sont animées
 wingSpeed_field = cmds.intSliderGrp(label="Wing Mouvement Duration", f=True, min=1, max=10, fmn=1, fmx=1000, value=4)    # Nombre de frames entre les deux positions d'animation des ailes
-angleMin_field = cmds.floatSliderGrp(label="Wings Down Position Angle", f=True, min=-180, max=0, fmn=-180, fmx=0, value=-65, precision=3) # Angle pour la position extrêmale basse des ailes
-angleMax_field = cmds.floatSliderGrp(label="Wings Up Position Angle", f=True, min=0, max=180, fmn=0, fmx=180, value=50, precision=3) # Position extrêmale haute
+angleMin_field = cmds.floatSliderGrp(label="Wings Down Pos Angle", f=True, min=-180, max=0, fmn=-180, fmx=0, value=-65, precision=3) # Angle pour la position extrêmale basse des ailes
+angleMax_field = cmds.floatSliderGrp(label="Wings Up Pos Angle", f=True, min=0, max=180, fmn=0, fmx=180, value=50, precision=3) # Position extrêmale haute
 
 cmds.setParent(parent)
 
 # 4. Buttons
 
 cmds.button(label="Generate or Update", command=lambda x: BugFlowGen())
-cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
-cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
-cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
+#cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
+#cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
+#cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
 
 cmds.showWindow(window)
