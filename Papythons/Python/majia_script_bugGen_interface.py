@@ -24,10 +24,10 @@ def GetFpsNumber(name):
     fps = FPS_MAP.get(name, 24) # Renvoie la valeur trouver dans le dictionnaire ou 24 s'il n'y avait pas de correspondance
     return fps
 
-# Fonction qui trouve un mesh en ignorant les namespaces
-def FindNodeIgnoreNamespace(name):
-    scene = cmds.ls(type="transform")
-    for node in scene:
+# Fonction qui trouve un mesh en ignorant les namespaces    Pour avoir les enfants du monde : FindNodeIgnoreNamespaceUnder("|", "NomDuNode")
+def FindNodeIgnoreNamespace(name, parent):
+    children = cmds.listRelatives(parent, ad=True, type="transform") or [] #, fullPath=True
+    for node in children:
         if node.split(":")[-1] == name:
             return node
     return None
@@ -87,6 +87,15 @@ def ResetProject(mainGn):
     return False
 
 
+# Si une animation de mesh exist déjà, les suppromer pour les recréer
+def ResetMeshAnim(animMshPref):
+    animL = cmds.ls(animMshPref + "*", type='transform')
+
+    for anim in animL:
+        cmds.delete(anim)
+
+    return None
+
 # Fonction que check si les inputs de l'utilisateur pour la génération de place holders sont valides
 def CheckProjectBodyValid():
     scene = cmds.ls(type="transform")
@@ -130,7 +139,7 @@ def CheckProjectMeshValid():
 
         # Vérifier que le mesh de l'aile gauche existe
         LWing = cmds.textFieldGrp(LWing_field, q=True, text=True)
-        LWingName = FindNodeIgnoreNamespace(LWing)
+        LWingName = FindNodeIgnoreNamespace(LWing, meshToGenerate)
         if not LWingName:
             return False, "The specified Left Wing Mesh could not be found."
         print("For Left Wing taking: ", LWingName)
@@ -147,7 +156,7 @@ def CheckProjectMeshValid():
         
         # Vérifier que le mesh de l'aile droite existe
         RWing = cmds.textFieldGrp(RWing_field, q=True, text=True)
-        RWingName = FindNodeIgnoreNamespace(RWing)
+        RWingName = FindNodeIgnoreNamespace(RWing, meshToGenerate)
         if not RWingName:
             return False, "The specified Right Wing Mesh does could not be found."
         print("For Right Wing taking: ", RWingName)
@@ -407,8 +416,8 @@ def BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animSt
             wingMesh = cmds.ls(tofind, r=True)
             AnimWingsToAcc(accListe, wingMesh, True, angleMin, angleMax, animStart, animEnd, accThreshold, wingSpeed)
 
-    # Clean = tout mettre dans un groupe principal
-    cmds.group(n=mainGn, em=True, w=True)
+    # Clean = tout mettre dans le groupe principal
+    #cmds.group(n=mainGn, em=True, w=True)
     cmds.parent(cmds.ls(animMshPref + "*", type='transform'), mainGn)
         
     return None
@@ -427,10 +436,10 @@ def GetUserInputs():
     # Init les noms
     mainGn = "GENERATOR_" + projectName.upper() + GRP
     phPref = projectName + "_placeHolder"
-    animPhPref = projectName + "_anim_" + phPref
-    rootPh = projectName + "_root_" + phPref + ctrl
-    geoMshPref = "geo_" + projectName
-    animMshPref = "anim_" + projectName
+    animPhPref = projectName + "_anim_placeHolder"
+    rootPh = projectName + "_root_placeHolders" + ctrl
+    geoMshPref = projectName + "_geo"
+    animMshPref = projectName + "_anim"
 
     # Récupère le reste des General Options
     animStart = cmds.intFieldGrp(animStart_field, q=True, value1=True)
@@ -525,12 +534,16 @@ def BugFlowPlaceHolders():
 
     # Update ou création = si le projet existe déjà, le supprimer pour le recréer
     ResetProject(mainGn)
+    cmds.group(n=mainGn, em=True, w=True)
 
     # Création du bon nombre de points qui tournent autour du centre du monde
     CreateMotionAtWorldCenter(nbPaths, phPref, animPhPref, attToNoise, animStart, animEnd, smoothCrv, sampleCrv, rootPh)
 
     # Animation du centre de l'animation pour qu'il suive la target avec un retard
     FollowTarget(rootPh, target, lateToTarget, animStart, animEnd)
+
+    # Rangement final
+    cmds.parent(rootPh, mainGn)
 
     # Ré activer l'autokey s'il était activé au départ
     if(autokey):
@@ -541,6 +554,8 @@ def BugFlowPlaceHolders():
 
     return None
 
+
+# Fonction qui ne génère que les mesh sur les place holders
 def BugFlowMeshes():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
@@ -558,11 +573,13 @@ def BugFlowMeshes():
     # Récupérer les inputs de l'utilisateur
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
 
+    # Supprime les anim qui existent déjà
+    ResetMeshAnim(animMshPref)
+
     # Placer les modèles de papythons sur les points animés
     BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, accThreshold, wingSpeed, sMin, sMax)
 
     # Clean final
-    cmds.parent(rootPh, mainGn) # Mettre le rig des place holder dans le groupe principal du projet
     cmds.hide(rootPh) # et le cacher
 
     # Ré activer l'autokey s'il était activé au départ
@@ -574,6 +591,8 @@ def BugFlowMeshes():
 
     return None
 
+
+# Fonction qui génère tout
 def BugFlowGen():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
@@ -599,6 +618,7 @@ def BugFlowGen():
 
     # Update ou création = si le projet existe déjà, le supprimer pour le recréer
     ResetProject(mainGn)
+    cmds.group(n=mainGn, em=True, w=True)
 
     # Création du bon nombre de points qui tournent autour du centre du monde
     CreateMotionAtWorldCenter(nbPaths, phPref, animPhPref, attToNoise, animStart, animEnd, smoothCrv, sampleCrv, rootPh)
@@ -630,10 +650,12 @@ def BugFlowGen():
 # INTERFACE
 
 # Si la fenêtre existe déjà on la ferme
+
 if cmds.window("BugFlowGenWindow", exists=True):
     cmds.deleteUI("BugFlowGenWindow")
 
 # Mise en page de la fenêtre
+
 window = cmds.window("BugFlowGenWindow", title="Bug Flow Generator", widthHeight=(500, 300))
 parent = cmds.columnLayout(adj=True, width=500)
 
