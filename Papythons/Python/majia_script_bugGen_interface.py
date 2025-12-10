@@ -82,10 +82,13 @@ def ResetProject(mainGn):
 
     if(mainGn in scene):
         cmds.delete(mainGn)
+        return True
 
-    return None
+    return False
 
-def CheckProjectValid():
+
+# Fonction que check si les inputs de l'utilisateur pour la génération de place holders sont valides
+def CheckProjectBodyValid():
     scene = cmds.ls(type="transform")
 
     # Vérifier que le nom du projet n'est pas vide
@@ -93,9 +96,9 @@ def CheckProjectValid():
     if (projectName == ""):
         return False, "Project must have a name."
 
+    # Vérifie si la frame range est possible
     animStart = cmds.intFieldGrp(animStart_field, q=True, value1=True)
     animEnd = cmds.intFieldGrp(animEnd_field, q=True, value1=True)
-
     if(animEnd <= animStart):
         return False, "Frame Range is not valid."
 
@@ -108,6 +111,13 @@ def CheckProjectValid():
     target = cmds.textFieldGrp(target_field, q=True, text=True)
     if not(target in scene):
         return False, "The specified target could not be found."
+
+    return True, "No error found in Project Body Settings."
+
+
+# Fonction que check si les inputs de l'utilisateur pour la génération des mesh sont valides
+def CheckProjectMeshValid():
+    scene = cmds.ls(type="transform")
 
     # Vérifier que le mesh existe
     meshToGenerate = cmds.textFieldGrp(meshToGenerate_field, q=True, text=True)
@@ -124,6 +134,16 @@ def CheckProjectValid():
         if not LWingName:
             return False, "The specified Left Wing Mesh could not be found."
         print("For Left Wing taking: ", LWingName)
+
+        # Vérifie que l'aile est enfant du mesh
+        parents = cmds.listRelatives(LWingName, allParents=True, fullPath=True) or []
+        isChild = False
+        for p in parents:
+            if p.split("|")[-1] == meshToGenerate:
+                isChild = True
+                break
+        if not isChild:
+            return False, "Left Wing Mesh must be a child of the Mesh/Group Mesh."
         
         # Vérifier que le mesh de l'aile droite existe
         RWing = cmds.textFieldGrp(RWing_field, q=True, text=True)
@@ -132,11 +152,17 @@ def CheckProjectValid():
             return False, "The specified Right Wing Mesh does could not be found."
         print("For Right Wing taking: ", RWingName)
 
-        wingSpeed = cmds.intSliderGrp(wingSpeed_field, q=True, value=True)
-        if(wingSpeed <= 0):
-            return False, "Wing Speed needs to be strictly positive."
+        # Vérifie que l'aile est enfant du mesh
+        parents = cmds.listRelatives(RWingName, allParents=True, fullPath=True) or []
+        isChild = False
+        for p in parents:
+            if p.split("|")[-1] == meshToGenerate:
+                isChild = True
+                break
+        if not isChild:
+            return False, "Right Wing Mesh must be a child of the Mesh/Group Mesh."
 
-    return True, "Project was successfully launched."
+    return True, "No error found in Project Mesh Settings."
 
 
 ############################################################################################################################################
@@ -338,7 +364,7 @@ def AnimWingsToAcc(accListe, wingMesh, isRight, angleMin, angleMax, animStart, a
             # Puis on va checker la frame suivante
             frame += 1
     
-            return None
+    return None
 
 
 
@@ -464,12 +490,103 @@ def GetUserInputs():
 ############################################################################################################################################
 
 
+# Fonction qui cherche le projet et le supprime si elle le trouve
+def BugFlowDel():
+    projectName = cmds.textFieldGrp(projectName_field, q=True, text=True)
+    mainGn = "GENERATOR_" + projectName.upper() + GRP
+
+    exists = ResetProject(mainGn)
+
+    if exists:
+        cmds.inViewMessage(amg="Project was successfully deleted.", bkc=0x319731, pos="midCenter", fade=True)
+    else:
+        cmds.inViewMessage(amg="Project was not deleted: it could not be found.", bkc=0xA03C3C, pos="midCenter", fade=True)
+
+    return None
+
+
+# Fonction qui ne génère que les place holders mais pas les mesh
+def BugFlowPlaceHolders():
+
+    # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
+    isValid, error = CheckProjectBodyValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        return None
+    print(error)
+
+    # Garder en mémoire l'était de l'autokey et le désactiver
+    autokey = bool(mel.eval('autoKeyframe -q -state;'))
+    mel.eval("autoKeyframe -state 0;")
+
+    # Récupérer les inputs de l'utilisateur
+    mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
+
+    # Update ou création = si le projet existe déjà, le supprimer pour le recréer
+    ResetProject(mainGn)
+
+    # Création du bon nombre de points qui tournent autour du centre du monde
+    CreateMotionAtWorldCenter(nbPaths, phPref, animPhPref, attToNoise, animStart, animEnd, smoothCrv, sampleCrv, rootPh)
+
+    # Animation du centre de l'animation pour qu'il suive la target avec un retard
+    FollowTarget(rootPh, target, lateToTarget, animStart, animEnd)
+
+    # Ré activer l'autokey s'il était activé au départ
+    if(autokey):
+        mel.eval("autoKeyframe -state 1;")
+
+    # Message de fin d'éxecution
+    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
+
+    return None
+
+def BugFlowMeshes():
+
+    # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
+    isValid, error = CheckProjectBodyValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        return None
+    print(error)
+
+    # Garder en mémoire l'était de l'autokey et le désactiver
+    autokey = bool(mel.eval('autoKeyframe -q -state;'))
+    mel.eval("autoKeyframe -state 0;")
+
+    # Récupérer les inputs de l'utilisateur
+    mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
+
+    # Placer les modèles de papythons sur les points animés
+    BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, accThreshold, wingSpeed, sMin, sMax)
+
+    # Clean final
+    cmds.parent(rootPh, mainGn) # Mettre le rig des place holder dans le groupe principal du projet
+    cmds.hide(rootPh) # et le cacher
+
+    # Ré activer l'autokey s'il était activé au départ
+    if(autokey):
+        mel.eval("autoKeyframe -state 1;")
+
+    # Message de fin d'éxecution
+    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
+
+    return None
+
 def BugFlowGen():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
-    isValid, error = CheckProjectValid()
+    isValid, error = CheckProjectBodyValid()
     if not isValid:
         print(error)
+        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        return None
+    print(error)
+    isValid, error = CheckProjectMeshValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
         return None
     print(error)
 
@@ -499,6 +616,9 @@ def BugFlowGen():
     # Ré activer l'autokey s'il était activé au départ
     if(autokey):
         mel.eval("autoKeyframe -state 1;")
+
+    # Message de fin d'éxecution
+    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
 
     return None
 
@@ -554,7 +674,7 @@ cmds.setParent("..")
 
 cmds.frameLayout(label="Noise Smoothing Options", cll=True, mw=20)
 
-smoothCrv_field = cmds.floatSliderGrp(label="Cutoff Frequency", f=True, min=0, max=30, fmn=0, fmx=30, value=1.75, precision=3) # Niveau de smooth sur les courbes d'animation noisées (30 = pas smoothée, 0 = très smoothée)
+smoothCrv_field = cmds.floatSliderGrp(label="Cutoff Frequency", f=True, min=.001, max=30, fmn=0, fmx=30, value=1.75, precision=3) # Niveau de smooth sur les courbes d'animation noisées (30 = pas smoothée, 0 = très smoothée)
 sampleCrv_field = cmds.floatSliderGrp(label="Sampling Rate", f=True, min=1, max=100, fmn=1, fmx=100, value=6.5, precision=3) # Niveau de simplification de la courbe, ie supprimer les clefs
 
 cmds.setParent("..")
@@ -566,7 +686,7 @@ cmds.setParent("..")
 cmds.frameLayout(label="Noise Smoothing Options", cll=True, mw=10)
 
 target_field = cmds.textFieldGrp(label="Target Name", text="target_lctr")   # Nom du point que les mesh doivent suivrent
-lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, min=0, max=25, fmn=0, fmx=100, value=5) # Nombre de frames de retard de l'animation du la courbe
+lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, min=-25, max=25, fmn=-1000, fmx=1000, value=5) # Nombre de frames de retard de l'animation du la courbe
 
 cmds.setParent("..")
 
@@ -598,8 +718,8 @@ cmds.setParent(parent)
 # 4. Buttons
 
 cmds.button(label="Generate or Update", command=lambda x: BugFlowGen())
-#cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
-#cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
-#cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
+cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
+cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
+cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
 
 cmds.showWindow(window)
