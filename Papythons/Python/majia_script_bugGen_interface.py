@@ -109,6 +109,11 @@ def CheckProjectBodyValid():
     if (projectName == ""):
         return False, "Project must have a name."
 
+    # Vérifier que le nom du projet est valide
+    for c in projectName:
+        if not (c.isalpha() or c=="_"):
+            return False, "Project name must only contain letters and underscores."
+
     # Vérifie si la frame range est possible
     animStart = cmds.intFieldGrp(animStart_field, q=True, value1=True)
     animEnd = cmds.intFieldGrp(animEnd_field, q=True, value1=True)
@@ -183,6 +188,22 @@ def CheckProjectMeshValid():
             return False, "Right Wing Mesh must be a child of the Mesh/Group Mesh."
 
     return True, "No error found in Project Mesh Settings."
+
+
+# Checker si tous les settings sont valide (pour gérer le check en une seul fonction)
+def CheckProjectValid(checkList):
+    checkFunctions = [CheckProjectBodyValid, CheckProjectPhValid, CheckProjectMeshValid]
+
+    for i in range(3):
+        if checkList[i]:
+            isValid, error = checkFunctions[i]()
+            if not isValid:
+                print(error)
+                cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
+                return False
+            print(error)
+
+    return True
 
 
 ############################################################################################################################################
@@ -528,22 +549,17 @@ def BugFlowDel():
 def BugFlowPlaceHolders():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
-    isValid, error = CheckProjectBodyValid()
+    isValid = CheckProjectValid([True, True, False])
     if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
-    print(error)
-    isValid, error = CheckProjectPhValid()
-    if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
-        return None
-    print(error)
 
     # Garder en mémoire l'était de l'autokey et le désactiver
     autokey = bool(mel.eval('autoKeyframe -q -state;'))
     mel.eval("autoKeyframe -state 0;")
+
+
+
+    #### Corps de la fonction ####
 
     # Récupérer les inputs de l'utilisateur
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
@@ -561,12 +577,17 @@ def BugFlowPlaceHolders():
     # Rangement final
     cmds.parent(rootPh, mainGn)
 
+    ##############################
+
+
+
     # Ré activer l'autokey s'il était activé au départ
     if(autokey):
         mel.eval("autoKeyframe -state 1;")
 
     # Message de fin d'éxecution
     cmds.inViewMessage(amg="Place holders were successfully generated.", bkc=green, pos="midCenter", fade=True)
+
 
     return None
 
@@ -575,22 +596,17 @@ def BugFlowPlaceHolders():
 def BugFlowMeshes():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
-    isValid, error = CheckProjectBodyValid()
+    isValid = CheckProjectValid([True, False, True])
     if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
-    print(error)
-    isValid, error = CheckProjectMeshValid()
-    if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
-        return None
-    print(error)
 
     # Garder en mémoire l'était de l'autokey et le désactiver
     autokey = bool(mel.eval('autoKeyframe -q -state;'))
     mel.eval("autoKeyframe -state 0;")
+
+
+
+    #### Corps de la fonction ####
 
     # Récupérer les inputs de l'utilisateur
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
@@ -604,7 +620,11 @@ def BugFlowMeshes():
     # Clean final
     cmds.hide(rootPh) # et le cacher
 
-    # Ré activer l'autokey s'il était activé au départ
+    ##############################
+
+
+
+   # Ré activer l'autokey s'il était activé au départ
     if(autokey):
         mel.eval("autoKeyframe -state 1;")
 
@@ -618,29 +638,18 @@ def BugFlowMeshes():
 def BugFlowGen():
 
     # Checker si les inputs de l'utilisateur vont créer une erreur et bloquer si c'est le cas
-    isValid, error = CheckProjectBodyValid()
+    isValid = CheckProjectValid([True, True, True])
     if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
-    print(error)
-    isValid, error = CheckProjectPhValid()
-    if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
-        return None
-    print(error)
-    isValid, error = CheckProjectMeshValid()
-    if not isValid:
-        print(error)
-        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
-        return None
-    print(error)
 
     # Garder en mémoire l'était de l'autokey et le désactiver
     autokey = bool(mel.eval('autoKeyframe -q -state;'))
     mel.eval("autoKeyframe -state 0;")
-    
+
+
+
+    #### Corps de la fonction ####
+
     # Récupérer les inputs de l'utilisateur
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
 
@@ -661,7 +670,11 @@ def BugFlowGen():
     cmds.parent(rootPh, mainGn) # Mettre le rig des place holder dans le groupe principal du projet
     cmds.hide(rootPh) # et le cacher
 
-    # Ré activer l'autokey s'il était activé au départ
+    ##############################
+
+
+
+   # Ré activer l'autokey s'il était activé au départ
     if(autokey):
         mel.eval("autoKeyframe -state 1;")
 
