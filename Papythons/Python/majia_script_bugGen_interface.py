@@ -15,6 +15,8 @@ ctrl = "_ctrl"
 grp = "_grp"
 GRP = "_GRP"
 
+green = 0x319731
+red = 0xA03C3C
 
 # FONCTIONS UTILITAIRES
 
@@ -88,17 +90,19 @@ def ResetProject(mainGn):
 
 
 # Si une animation de mesh exist déjà, les suppromer pour les recréer
-def ResetMeshAnim(animMshPref):
+def ResetMeshAnim(animMshPref, rootPh):
     animL = cmds.ls(animMshPref + "*", type='transform')
-
+    
     for anim in animL:
+        print("Deleting: ", anim)
         cmds.delete(anim)
+
+    cmds.showHidden(rootPh)
 
     return None
 
 # Fonction que check si les inputs de l'utilisateur pour la génération de place holders sont valides
 def CheckProjectBodyValid():
-    scene = cmds.ls(type="transform")
 
     # Vérifier que le nom du projet n'est pas vide
     projectName = cmds.textFieldGrp(projectName_field, q=True, text=True)
@@ -116,12 +120,19 @@ def CheckProjectBodyValid():
     if(fps <= 0):
         return False, "Frame Rate is not valid."
 
+    return True, "No error found in Project Body Settings."
+
+
+# Fonction que check si les inputs de l'utilisateur pour la génération de place holders sont valides
+def CheckProjectPhValid():
+    scene = cmds.ls(type="transform")
+
     # Vérifier que la target existe
     target = cmds.textFieldGrp(target_field, q=True, text=True)
     if not(target in scene):
         return False, "The specified target could not be found."
 
-    return True, "No error found in Project Body Settings."
+    return True, "No error found in Project Place Holders Settings."
 
 
 # Fonction que check si les inputs de l'utilisateur pour la génération des mesh sont valides
@@ -417,7 +428,6 @@ def BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animSt
             AnimWingsToAcc(accListe, wingMesh, True, angleMin, angleMax, animStart, animEnd, accThreshold, wingSpeed)
 
     # Clean = tout mettre dans le groupe principal
-    #cmds.group(n=mainGn, em=True, w=True)
     cmds.parent(cmds.ls(animMshPref + "*", type='transform'), mainGn)
         
     return None
@@ -439,7 +449,7 @@ def GetUserInputs():
     animPhPref = projectName + "_anim_placeHolder"
     rootPh = projectName + "_root_placeHolders" + ctrl
     geoMshPref = projectName + "_geo"
-    animMshPref = projectName + "_anim"
+    animMshPref = projectName + "_anim_mesh"
 
     # Récupère le reste des General Options
     animStart = cmds.intFieldGrp(animStart_field, q=True, value1=True)
@@ -507,9 +517,9 @@ def BugFlowDel():
     exists = ResetProject(mainGn)
 
     if exists:
-        cmds.inViewMessage(amg="Project was successfully deleted.", bkc=0x319731, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg="Project was successfully deleted.", bkc=green, pos="midCenter", fade=True)
     else:
-        cmds.inViewMessage(amg="Project was not deleted: it could not be found.", bkc=0xA03C3C, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg="Project was not deleted: it could not be found.", bkc=red, pos="midCenter", fade=True)
 
     return None
 
@@ -521,7 +531,13 @@ def BugFlowPlaceHolders():
     isValid, error = CheckProjectBodyValid()
     if not isValid:
         print(error)
-        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
+        return None
+    print(error)
+    isValid, error = CheckProjectPhValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
     print(error)
 
@@ -550,7 +566,7 @@ def BugFlowPlaceHolders():
         mel.eval("autoKeyframe -state 1;")
 
     # Message de fin d'éxecution
-    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
+    cmds.inViewMessage(amg="Place holders were successfully generated.", bkc=green, pos="midCenter", fade=True)
 
     return None
 
@@ -562,7 +578,13 @@ def BugFlowMeshes():
     isValid, error = CheckProjectBodyValid()
     if not isValid:
         print(error)
-        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
+        return None
+    print(error)
+    isValid, error = CheckProjectMeshValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
     print(error)
 
@@ -574,7 +596,7 @@ def BugFlowMeshes():
     mainGn, phPref, animPhPref, rootPh, geoMshPref, animMshPref, animStart, animEnd, nbPaths, attToNoise, smoothCrv, sampleCrv, target, lateToTarget, meshToGenerate, sMin, sMax, hasWings, LWing, RWing, accThreshold, wingSpeed, angleMin, angleMax = GetUserInputs()
 
     # Supprime les anim qui existent déjà
-    ResetMeshAnim(animMshPref)
+    ResetMeshAnim(animMshPref, rootPh)
 
     # Placer les modèles de papythons sur les points animés
     BakeToMesh(hasWings, phPref, geoMshPref, animMshPref, meshToGenerate, animStart, animEnd, RWing, LWing, mainGn, angleMin, angleMax, accThreshold, wingSpeed, sMin, sMax)
@@ -587,7 +609,7 @@ def BugFlowMeshes():
         mel.eval("autoKeyframe -state 1;")
 
     # Message de fin d'éxecution
-    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
+    cmds.inViewMessage(amg="Meshes were successfully generated.", bkc=green, pos="midCenter", fade=True)
 
     return None
 
@@ -599,13 +621,19 @@ def BugFlowGen():
     isValid, error = CheckProjectBodyValid()
     if not isValid:
         print(error)
-        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
+        return None
+    print(error)
+    isValid, error = CheckProjectPhValid()
+    if not isValid:
+        print(error)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
     print(error)
     isValid, error = CheckProjectMeshValid()
     if not isValid:
         print(error)
-        cmds.inViewMessage(amg=error, bkc=0xA03C3C, pos="midCenter", fade=True)
+        cmds.inViewMessage(amg=error, bkc=red, pos="midCenter", fade=True)
         return None
     print(error)
 
@@ -638,7 +666,7 @@ def BugFlowGen():
         mel.eval("autoKeyframe -state 1;")
 
     # Message de fin d'éxecution
-    cmds.inViewMessage(amg="Project was successfully created", bkc=0x319731, pos="midCenter", fade=True)
+    cmds.inViewMessage(amg="Project was successfully generated.", bkc=green, pos="midCenter", fade=True)
 
     return None
 
@@ -741,7 +769,7 @@ cmds.setParent(parent)
 
 cmds.button(label="Generate or Update", command=lambda x: BugFlowGen())
 cmds.button(label="Only Generate Place Holders", command=lambda x: BugFlowPlaceHolders())
-cmds.button(label="Re Animate Meshes", command=lambda x: BugFlowMeshes())
+cmds.button(label="Only Generate Mesh Animations", command=lambda x: BugFlowMeshes())
 cmds.button(label="Delete Project", command=lambda x: BugFlowDel())
 
 cmds.showWindow(window)
