@@ -280,6 +280,7 @@ def ListTargetPos(target, animStart, animEnd):
 
     posListe = []
     for frame in range(animStart, animEnd+1):
+
         cmds.currentTime(frame)
         position = cmds.xform(target, q=True, t=True, ws=True)
         posListe.append(position)
@@ -291,14 +292,16 @@ def ListTargetPos(target, animStart, animEnd):
 def FollowTarget(follower, target, late, animStart, animEnd):
 
     posListe = ListTargetPos(target, animStart, animEnd)
+    derClefs = len(posListe) - 1
 
     for frame in range(animStart, animEnd+1):
-        # Chercher la position à copier en prenant en compte le retard
+        # Chercher la position dans la liste à copier en prenant en compte le retard
         idx = frame - animStart - late
-        if(idx < animStart):
-            idx = animStart
-        if(idx > animEnd):
-            idx = animEnd
+
+        if(idx < 0):
+            idx = 0
+        if(idx > derClefs - 1):
+            idx = derClefs - 1
 
         # Placer les clefs
         cmds.currentTime(frame)
@@ -727,9 +730,9 @@ cmds.frameLayout(label="Noises Options", cll=True, mw=20)
 
 rNoiseFreq_field = cmds.floatSliderGrp(label="Rotation Noise Freq", f=True, min=.001, max=2, fmn=.001, fmx=10, value=1, precision=3)  # Fréquence du noise sur la rotation des place holders autour de la cible
 
-sNoiseFreq_field = cmds.floatSliderGrp(label="Distance to Target Noise Freq", f=True, min=.001, max=2, fmn=.001, fmx=10, value=1, precision=3) # Fréquence du noise sur l'éloignement puis rapprochement des place holders à la cible
-sNoiseMin_field = cmds.floatSliderGrp(label="Min Distance to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=1, precision=3)    # Rapprochement maximal
-sNoiseMax_field = cmds.floatSliderGrp(label="Max Distance to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=3, precision=3)    # Eloignement maximal
+sNoiseFreq_field = cmds.floatSliderGrp(label="Dist to Target Noise Freq", f=True, min=.001, max=2, fmn=.001, fmx=10, value=1, precision=3) # Fréquence du noise sur l'éloignement puis rapprochement des place holders à la cible
+sNoiseMin_field = cmds.floatSliderGrp(label="Min Dist to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=1, precision=3)    # Rapprochement maximal
+sNoiseMax_field = cmds.floatSliderGrp(label="Max Dist to Target", f=True, min=0, max=10, fmn=0, fmx=100, value=3, precision=3)    # Eloignement maximal
 
 cmds.setParent("..")
 
@@ -749,7 +752,7 @@ cmds.setParent("..")
 cmds.frameLayout(label="Noise Smoothing Options", cll=True, mw=10)
 
 target_field = cmds.textFieldGrp(label="Target Name", text="target_lctr")   # Nom du point que les mesh doivent suivrent
-lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, min=-25, max=25, fmn=-1000, fmx=1000, value=5) # Nombre de frames de retard de l'animation du la courbe
+lateToTarget_field = cmds.intSliderGrp(label="Frame Delay", f=True, min=0, max=25, fmn=0, fmx=1000, value=5) # Nombre de frames de retard de l'animation du la courbe
 
 cmds.setParent("..")
 
