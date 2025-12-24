@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import random
+import math
 
 def creer_pages(nombre_pages):
     #Crée les pages du grimoire
@@ -147,15 +148,12 @@ def rigger_pages():
         # - En X : centre de la page (pour que la rotation soit centrée)
         pivot_x = (bbox[0] + bbox[3]) / 2
         
-        # - En Y et Z : formules pour distribuer les locators en arc (demi-cercle vertical)
-        # Extraction du numéro de page (Page_001 -> 0, Page_002 -> 1, etc.)
-        page_index = int(page.split('_')[-1]) - 1  # n = numéro de la page
+        # - En Y : hauteur de la page
+        pivot_y = cmds.getAttr(f"{page}.translateY")
         
-        # y = h / pi * sin( n * pi / (P - 1) )
-        pivot_y = (hauteur_pages_totales / math.pi) * math.sin(page_index * math.pi / (nb_pages_total - 1))
-        
-        # z = lz + h / pi * ( cos( n * pi / (P - 1) ) - 1 )
-        pivot_z = coordonnee_z + (hauteur_pages_totales / math.pi) * (math.cos(page_index * math.pi / (nb_pages_total - 1)) - 1)
+        # - En Z : bbox[5] = bord avant de la page (l'autre côté de la reliure)
+        #   C'est ici que les pages tournent
+        pivot_z = bbox[5]
         
         # CRÉATION DU CONTRÔLEUR
         
@@ -290,13 +288,24 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
             # Pas d'accélération : toutes les pages prennent le même temps
             duree = duree_par_page
         """
-        # CALCUL DE LA POSITION Y DE FIN
+        # CALCUL DES POSITIONS DE FIN (formules en arc)
         
-        # Position Y actuelle
+        # Positions actuelles
         y_start = cmds.getAttr(f"{ctrl}.translateY")
+        z_start = cmds.getAttr(f"{ctrl}.translateZ")
         
-        # Position Y finale : chaque page s'empile progressivement
-        y_end = y_base + i * epaisseur
+        # N = nombre de pages qui tournent (pour qu'elles soient collées par la tranche)
+        N = len(all_controls)
+        
+        # n = position de cette page dans la liste des pages qui tournent (0 à N-1)
+        n = i
+        
+        # Formules pour les positions finales en arc
+        # y = y_base + N * 0.015 / pi * sin( n * pi / ( N - 1 ) )
+        y_end = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
+        
+        # z = coordonnee_z + N * 0.015 / pi * ( cos( n * pi / ( N - 1 ) ) - 1 )
+        z_end = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
     
         # ANIMATION DE ROTATION (axe X)
         
@@ -315,14 +324,19 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), 
                        inTangentType='spline', outTangentType='spline')
         
-        # ANIMATION DE TRANSLATION Y (hauteur)
+        # ANIMATION DE TRANSLATION Y et Z (hauteur et profondeur)
         
-        # La page descend de sa position actuelle à sa position finale dans la pile
+        # La page se déplace vers sa position finale en arc
         cmds.setKeyframe(ctrl, attribute='translateY', value=y_start, time=frame_actuelle)
         cmds.setKeyframe(ctrl, attribute='translateY', value=y_end, time=frame_fin)
         
-        # Courbe fluide pour la descente
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_start, time=frame_actuelle)
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_fin)
+        
+        # Courbe fluide pour le mouvement
         cmds.keyTangent(ctrl, attribute='translateY', time=(frame_actuelle, frame_fin),
+                       inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='translateZ', time=(frame_actuelle, frame_fin),
                        inTangentType='spline', outTangentType='spline')
         
         # VARIATION ALÉATOIRE EN Z
@@ -404,14 +418,70 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     # Mettre à jour la timeline de Maya pour afficher toute l'animation
     cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale)
 
+def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, duree_totale):
+    """
+    Anime les pages qui ne se tournent pas pour qu'elles se positionnent aussi sur l'arc
+    SANS rotation - juste translation Y et Z
+    """
+    
+    # Vérifier que le rig existe
+    if not cmds.objExists("Pages_RIG_GRP"):
+        return
+    
+    # Récupérer tous les contrôleurs
+    all_controls = cmds.listRelatives("Pages_RIG_GRP", children=True, type='transform')
+    if not all_controls:
+        return
+    
+    # Trier les contrôleurs par nom
+    all_controls.sort()
+    
+    # Sélectionner les pages qui ne sont PAS animées par animer_pages
+    # Ce sont toutes les pages SAUF les (nombre_pages_a_tourner+1) dernières
+    controls_non_tournes = all_controls[:-(nombre_pages_a_tourner+1)]
+    
+    # PARAMÈTRES
+    y_base = 0.42
+    epaisseur = 0.015
+    N = nombre_pages
+    
+    # Frame de début et de fin
+    frame_fin = frame_debut + duree_totale
+    
+    # Animer chaque page non tournée
+    for ctrl in controls_non_tournes:
+        # Positions actuelles
+        y_start = cmds.getAttr(f"{ctrl}.translateY")
+        z_start = cmds.getAttr(f"{ctrl}.translateZ")
+        
+        # Numéro de la page
+        n = N - int(ctrl.split('_')[-2])  # Page_001_CTRL -> 0
+        
+        # Formules pour les positions finales en arc (mêmes formules que animer_pages)
+        y_end = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
+        z_end = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
+        
+        # ANIMATION DE TRANSLATION Y et Z uniquement (PAS de rotation)
+        cmds.setKeyframe(ctrl, attribute='translateY', value=y_start, time=frame_debut)
+        cmds.setKeyframe(ctrl, attribute='translateY', value=y_end, time=frame_fin)
+        
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_start, time=frame_debut)
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_fin)
+        
+        # Courbes fluides
+        cmds.keyTangent(ctrl, attribute='translateY', time=(frame_debut, frame_fin),
+                       inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='translateZ', time=(frame_debut, frame_fin),
+                       inTangentType='spline', outTangentType='spline')
+
 # Temps total de l'animation(modifiable)
 Temps_total = 150
 
 #(modifiable)
-nombre_pages = 50
+nombre_pages = 20
 
 #(modifiable) mais laisser le -1
-nombre_pages_a_tourner=25-1
+nombre_pages_a_tourner=10-1
 # Temps avant ouverture grimoire (modifiable)
 frame_debut=10
 
@@ -451,11 +521,10 @@ duree_lente = temps_pages_lentes // nb_pages_lentes
 #print("Durée pages normales:", duree_normale)
 #print("Durée pages lentes:", duree_lente)
 
-# Variables globales pour le positionnement des locators en arc
-hauteur_pages_totales = nombre_pages * 0.015  # h = hauteur totale quand le livre est fermé
-nb_pages_total = nombre_pages  # P = nombre de pages total
-coordonnee_z = 3.3  # lz = coordonnée z de la reliure (position de départ des locators)
+# Variable globale pour le positionnement des locators en arc
+coordonnee_z = 3.3  # Position Z de la reliure (coordonnée de départ des locators)
 
 creer_pages(nombre_pages)
 rigger_pages()
 animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
+animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
