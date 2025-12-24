@@ -24,6 +24,11 @@ def creer_pages(nombre_pages):
     # Position fixe du bord de la reliure pour TOUTES les pages
     reliure_z = 3.3  # Position fixe en Z du bord de la reliure
     
+    # PARAMÈTRES DU DEMI-CERCLE
+    # Rayon du demi-cercle formé par les pages
+    rayon = (nombre_pages * 0.015) / math.pi  # Le rayon est calculé pour que l'arc corresponde à l'épaisseur totale
+    y_base = 0.42  # Position Y de base (bas du demi-cercle)
+    
     # Boucle pour créer chaque page
     for i in range(nombre_pages):
         # Variation aléatoire de la taille
@@ -34,17 +39,21 @@ def creer_pages(nombre_pages):
         # [0] récupère le transform node
         page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=0.02, d=depth, sx=12, sy=12, sz=12)[0]      ###MODIFIE MODIFIE MODIFE
         
-        # Positionner chaque page en hauteur pour créer la pile
-        # L'espacement de 0.015 crée l'épaisseur de la pile
-        y_pos = 0.42 + i * 0.015
+        # POSITION EN DEMI-CERCLE
+        # Angle pour cette page (de π à 0 pour un demi-cercle, inversé pour partir du haut)
+        angle = math.pi - (i / (nombre_pages - 1)) * math.pi
+        
+        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle
+        y_pos = y_base + i * 0.015 + rayon * math.sin(angle)
         
         # Petite variation aléatoire en X
         x_offset = random.uniform(-0.05, 0.05)
         
-        # CALCUL DE LA POSITION EN Z POUR ALIGNER LE BORD DE RELIURE
-        # Comme le centre de la page est à z=0 par défaut et que depth varie,
-        # on doit décaler la page pour que son bord (depth/2) soit toujours à reliure_z
-        z_pos = reliure_z - depth/2
+        # CALCUL DE LA POSITION EN Z pour le demi-cercle
+        # Base Z (position du bord de reliure aligné)
+        z_base = reliure_z - depth/2
+        # Ajouter la composante horizontale du cercle (1 - cos pour partir de 0)
+        z_pos = z_base + rayon * (1 - math.cos(angle))
         
         # Déplacer la page à sa position finale
         cmds.move(x_offset, y_pos, z_pos, page)
@@ -478,10 +487,10 @@ def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, dur
 Temps_total = 150
 
 #(modifiable)
-nombre_pages = 20
+nombre_pages = 50
 
 #(modifiable) mais laisser le -1
-nombre_pages_a_tourner=10-1
+nombre_pages_a_tourner=25-1
 # Temps avant ouverture grimoire (modifiable)
 frame_debut=10
 
@@ -527,4 +536,5 @@ coordonnee_z = 3.3  # Position Z de la reliure (coordonnée de départ des locat
 creer_pages(nombre_pages)
 rigger_pages()
 animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
-animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
+# Les pages qui ne tournent pas restent en demi-cercle (pas d'animation)
+# animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
