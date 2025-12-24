@@ -49,11 +49,15 @@ def creer_pages(nombre_pages):
         # Petite variation aléatoire en X
         x_offset = random.uniform(-0.05, 0.05)
         
-        # CALCUL DE LA POSITION EN Z pour le demi-cercle
+        # CALCUL DE LA POSITION EN Z pour le demi-cercle avec ondulation
         # Base Z (position du bord de reliure aligné)
         z_base = reliure_z - depth/2
-        # Ajouter la composante horizontale du cercle (1 - cos pour partir de 0)
-        z_pos = z_base + rayon * (1 - math.cos(angle))
+        # Progression normalisée (0 à 1)
+        t = i / (nombre_pages - 1)
+        # Ondulation subtile : bas rentré, milieu sorti davantage, haut rentré
+        ondulation = math.sin(t * math.pi) * 0.15
+        # Ajouter la composante horizontale du cercle + ondulation
+        z_pos = z_base + rayon * (1 - math.cos(angle)) + ondulation
         
         # Déplacer la page à sa position finale
         cmds.move(x_offset, y_pos, z_pos, page)
