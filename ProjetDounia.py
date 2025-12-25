@@ -37,7 +37,7 @@ def creer_pages(nombre_pages):
         
         # Créer un cube plat pour représenter une page
         # [0] récupère le transform node
-        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=0.02, d=depth, sx=12, sy=12, sz=12)[0]      ###MODIFIE MODIFIE MODIFE
+        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=0.02, d=depth, sx=12, sy=12, sz=12)[0]
         
         # POSITION EN DEMI-CERCLE
         # Angle pour cette page (de π à 0 pour un demi-cercle, inversé pour partir du haut)
@@ -54,16 +54,13 @@ def creer_pages(nombre_pages):
         z_base = reliure_z - depth/2
         # Progression normalisée (0 à 1)
         t = i / (nombre_pages - 1)
-        # Ondulation subtile : bas rentré, milieu sorti davantage, haut rentré
+        # Ondulation : bas rentré, milieu sorti davantage, haut rentré
         ondulation = math.sin(t * math.pi) * 0.15
         # Ajouter la composante horizontale du cercle + ondulation
         z_pos = z_base + rayon * (1 - math.cos(angle)) + ondulation
         
         # Déplacer la page à sa position finale
         cmds.move(x_offset, y_pos, z_pos, page)
-        
-        # PAS de rotation aléatoire en Y pour garder l'alignement du bord de reliure
-        # cmds.rotate(0, random.uniform(-2, 2), 0, page)
         
         # Parenter la page au groupe
         cmds.parent(page, pages_grp)
@@ -82,7 +79,6 @@ def creer_pages(nombre_pages):
         # On récupère les coordonnées du bord de chaque page 
         bbox = cmds.exactWorldBoundingBox(une_page)
         pivot_x = (bbox[0] + bbox[3]) / 2
-        """pivot_y = cmds.getAttr(f"{une_page}.translateY")"""
         pivot_y = -3
         pivot_z = bbox[5]
             
@@ -152,25 +148,14 @@ def rigger_pages():
         # CALCUL DE LA POSITION DU PIVOT
         
         # Récupérer la bounding box (boîte englobante) de la page
-        # La bounding box est une boîte invisible qui entoure parfaitement l'objet
-        # Elle nous donne les coordonnées min/max de l'objet dans l'espace 3D
-        # bbox = [xmin, ymin, zmin, xmax, ymax, zmax]
         bbox = cmds.exactWorldBoundingBox(page)
         
         # Position du pivot :
-        # - En X : centre de la page (pour que la rotation soit centrée)
         pivot_x = (bbox[0] + bbox[3]) / 2
-        
-        # - En Y : hauteur de la page
         pivot_y = cmds.getAttr(f"{page}.translateY")
-        
-        # - En Z : bbox[5] = bord avant de la page (l'autre côté de la reliure)
-        #   C'est ici que les pages tournent
         pivot_z = bbox[5]
         
         # CRÉATION DU CONTRÔLEUR
-        
-        # Créer un locator (axe 3D) qui servira de contrôleur
         ctrl_name = f"{page}_CTRL"
         ctrl = cmds.spaceLocator(name=ctrl_name)[0]
         
@@ -178,24 +163,19 @@ def rigger_pages():
         cmds.move(pivot_x, pivot_y, pivot_z, ctrl)
         
         # PARENTAGE DE LA PAGE AU CONTRÔLEUR
-
-        # PROBLÈME : Si on parente directement la page au contrôleur, sa position va sauter
-        # car le référentiel local change (la page se positionne par rapport au contrôleur)
         
         # Sauvegarde la position/rotation actuelle de la page dans l'espace monde
         page_pos = cmds.xform(page, query=True, worldSpace=True, translation=True)
         page_rot = cmds.xform(page, query=True, worldSpace=True, rotation=True)
         
-        # Parenter la page au contrôleur (ca va changer les coordonnées locales mais pas la position visuelle)
-        # Maintenant, quand on bouge le contrôleur, la page suit
+        # Parenter la page au contrôleur
         cmds.parent(page, ctrl)
         
         # Restaurer la position/rotation dans l'espace monde
-        # Pour que visuellement rien ne change
         cmds.xform(page, worldSpace=True, translation=page_pos)
         cmds.xform(page, worldSpace=True, rotation=page_rot)
         
-        # Freeze transforms : réinitialiser les valeurs locales à 0
+        # Freeze transforms
         cmds.makeIdentity(page, apply=True, translate=True, rotate=True, scale=True)
         
         # Organiser le contrôleur dans le groupe de rig
@@ -233,18 +213,10 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         return
     
     # Trier les contrôleurs par nom pour avoir un ordre cohérent
-    # Page_01_CTRL, Page_02_CTRL, etc.
     all_controls.sort()
     
     # SÉLECTION DES PAGES À ANIMER
-    
-    # Prendre les dernières pages
-    # Par exemple : si on a 50 pages et nombre_pages_a_tourner=15
-    # On prend Page_36_CTRL à Page_50_CTRL 
     controls_a_animer = all_controls[(-nombre_pages_a_tourner-1):]
-    
-    # Inverser l'ordre pour commencer par la page la plus haute
-    # Maintenant : Page_50_CTRL, Page_49_CTRL, ..., Page_36_CTRL
     controls_a_animer.reverse()
     
     all_bends = cmds.listRelatives("Bend_GRP", children=True, type='transform')
@@ -255,11 +227,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     bends_a_animer.reverse()
 
     # PARAMÈTRES D'EMPILEMENT
-    
-    # Hauteur de base où les pages tournées vont s'empiler
     y_base = 0.42
-    
-    # Épaisseur entre chaque page empilée
     epaisseur = 0.015
     
     # Frame actuelle dans la timeline (on commence à frame_debut)
@@ -267,10 +235,8 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     
     # BOUCLE D'ANIMATION DE CHAQUE PAGE
 
-    # le temps augmente progressivement selon l’indice
-
     M = len(controls_a_animer)
-    power = 10.6  # >1 = ralentissement plus marqué vers la fin
+    power = 10.6
 
     # Sécurité
     if M <= temps_minimum_animation_page:
@@ -278,103 +244,66 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     else:
         durations = []
         for i in range(M):
-            t = (i / (M - 1)) ** power   # interpolation non linéaire
+            t = (i / (M - 1)) ** power
             dur = duree_normale + (duree_lente - duree_normale) * t
             durations.append(max(1, int(round(dur))))
     print("Durations list:", durations)
 
-    # puis dans ta boucle d'animation, au lieu de calculer `duree` :
-
     for i, ctrl in enumerate(controls_a_animer):
         duree = durations[i] 
-        # CALCUL DE LA DURÉE D'ANIMATION
-        """
-        if acceleration:
-            # Facteur d'accélération : commence à 0.3 (rapide) et va jusqu'à 1.0 (+lent)
-            # i / len(controls_a_animer) donne un pourcentage de progression (0 à 1)
-            # * 0.7 le ramène de 0 à 0.7
-            # + 0.3 le décale de 0.3 à 1.0
-            # Résultat : première page rapide (duree*0.3), dernière lente (duree*1.0)
-            facteur = 0.3 + (i / len(controls_a_animer)) * 0.7
-            duree = int(duree_par_page * facteur)
-        else:
-            # Pas d'accélération : toutes les pages prennent le même temps
-            duree = duree_par_page
-        """
+        
         # CALCUL DES POSITIONS DE FIN (formules en arc)
         
         # Positions actuelles
         y_start = cmds.getAttr(f"{ctrl}.translateY")
         z_start = cmds.getAttr(f"{ctrl}.translateZ")
         
-        # N = nombre de pages qui tournent (pour qu'elles soient collées par la tranche)
+        # N = nombre de pages qui tournent
         N = len(all_controls)
         
         # n = position de cette page dans la liste des pages qui tournent (0 à N-1)
         n = i
         
         # Formules pour les positions finales en arc
-        # y = y_base + N * 0.015 / pi * sin( n * pi / ( N - 1 ) )
         y_end = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
-        
-        # z = coordonnee_z + N * 0.015 / pi * ( cos( n * pi / ( N - 1 ) ) - 1 )
         z_end = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
     
         # ANIMATION DE ROTATION (axe X)
-        
-        # Keyframe de départ : rotation à 0° (page horizontale)
         cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_actuelle)
         
-        # Frame de fin de cette animation
         frame_fin = frame_actuelle + duree
         
-        # Keyframe de fin : rotation à 180° (page retournée)
         cmds.setKeyframe(ctrl, attribute='rotateX', value=180, time=frame_fin)
         
-        # Appliquer une courbe spline pour un mouvement + fluide (pas linéaire)
-        #'spline' crée une interpolation douce (courbe en S)
-        # 'linear' serait une transition à vitesse constante (moins naturel)
         cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), 
                        inTangentType='spline', outTangentType='spline')
         
         # ANIMATION DE TRANSLATION Y et Z (hauteur et profondeur)
-        
-        # La page se déplace vers sa position finale en arc
         cmds.setKeyframe(ctrl, attribute='translateY', value=y_start, time=frame_actuelle)
         cmds.setKeyframe(ctrl, attribute='translateY', value=y_end, time=frame_fin)
         
         cmds.setKeyframe(ctrl, attribute='translateZ', value=z_start, time=frame_actuelle)
         cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_fin)
         
-        # Courbe fluide pour le mouvement
         cmds.keyTangent(ctrl, attribute='translateY', time=(frame_actuelle, frame_fin),
                        inTangentType='spline', outTangentType='spline')
         cmds.keyTangent(ctrl, attribute='translateZ', time=(frame_actuelle, frame_fin),
                        inTangentType='spline', outTangentType='spline')
         
         # VARIATION ALÉATOIRE EN Z
+        variation_z = random.uniform(-1, 1)
         
-        # Ajouter une légère torsion pendant le mouvement
-        variation_z = random.uniform(-1, 1)  # Entre -1° et +1°
-        
-        # Au début : pas de rotation en Z
         cmds.setKeyframe(ctrl, attribute='rotateZ', value=0, time=frame_actuelle)
-        
-        # Au milieu du mouvement : légère rotation en Z
         cmds.setKeyframe(ctrl, attribute='rotateZ', value=variation_z, time=frame_actuelle + duree//2)
-        
-        # À la fin : retour à 0
         cmds.setKeyframe(ctrl, attribute='rotateZ', value=0, time=frame_fin)
         
         # CHEVAUCHEMENT (OVERLAP)
-        
-        # La prochaine page commence 2 frames avant la fin de celle-ci
         frame_actuelle += duree - 2
 
     frame_actuelle = frame_debut
 
     M = len(bends_a_animer)
-    power = 10.6  # >1 = ralentissement plus marqué vers la fin
+    power = 10.6
 
     # Sécurité
     if M <= temps_minimum_animation_page:
@@ -382,54 +311,151 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     else:
         durations = []
         for i in range(M):
-            t = (i / (M - 1)) ** power   # interpolation non linéaire
+            t = (i / (M - 1)) ** power
             dur = duree_normale + (duree_lente - duree_normale) * t
             durations.append(max(1, int(round(dur))))
     print("Durations list:", durations)
 
-    # puis dans ta boucle d'animation, au lieu de calculer `duree` :
-
     for j, bend in enumerate(bends_a_animer): 
-        # CALCUL DE LA DURÉE D'ANIMATION
         duree = durations[j]
-        """
-        if acceleration:
-            # Facteur d'accélération : commence à 0.3 (rapide) et va jusqu'à 1.0 (+lent)
-            # i / len(bends_a_animer) donne un pourcentage de progression (0 à 1)
-            # * 0.7 le ramène de 0 à 0.7
-            # + 0.3 le décale de 0.3 à 1.0
-            # Résultat : première page rapide (duree*0.3), dernière lente (duree*1.0)
-            facteur = 0.3 + (j / len(bends_a_animer)) * 0.7
-            duree = int(duree_par_page * facteur)
-        else:
-            # Pas d'accélération : tous les bends prennent le même temps
-            duree = duree_par_page
-        """
-        # ANIMATION DE ROTATION (axe X)
         
         bend_node = cmds.listConnections(bend, type='nonLinear')[0]
-        # Keyframe de départ : curvature à 0 (page horizontale)
         cmds.setKeyframe(bend_node, attribute="curvature", value=0, time=frame_actuelle)
         
-        # Frame de fin de cette animation
         frame_fin = frame_actuelle + duree
-
-        # Frame entre le début et la fin de cette animation
         frame_mid = (frame_actuelle + frame_fin) / 2
         
         cmds.setKeyframe(bend_node, attribute='curvature', value=100, time=frame_mid)
         cmds.setKeyframe(bend_node, attribute='curvature', value=0, time=frame_fin)
 
-        # CHEVAUCHEMENT (OVERLAP)
-        
-        # La prochaine page commence 2 frames avant la fin de celle-ci
         frame_actuelle += duree - 2
     
     # Ajouter une pause de 20 frames à la fin
-    frame_finale = frame_actuelle + 20
+    frame_finale = frame_actuelle + 10
     
-    # Mettre à jour la timeline de Maya pour afficher toute l'animation
-    cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale)
+    # Mettre à jour la timeline de Maya pour afficher toute l'animation (avec marge pour les particules)
+    cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale + 80)
+    
+    # Retourner la frame finale pour savoir quand démarrer les particules
+    return frame_finale
+
+def creer_particules_magiques(frame_debut_particules, duree_emission=60):
+    """
+    Crée un système de particules magiques qui s'échappent du centre du livre vers le haut
+    """
+    
+    # Nettoyer les anciens systèmes
+    objets_a_supprimer = ["particules_magiques", "emetteur_particules", "gravity_up", "turbulence_magique", "shader_particules_magiques", "particulesSG"]
+    
+    for obj in objets_a_supprimer:
+        if cmds.objExists(obj): cmds.delete(obj)
+    
+    # POSITION DE L'ÉMETTEUR
+    # Centre du livre (au milieu entre les deux arcs de pages)
+    emetteur_x = 0
+    emetteur_y = 1.2  # Au niveau du centre des pages
+    emetteur_z = 3.3  # Position de la reliure (centre du livre)
+    
+    # CRÉER LE SYSTÈME DE PARTICULES
+    particules = cmds.particle(name="particules_magiques")[0]
+    particule_shape = cmds.listRelatives(particules, shapes=True)[0]
+    
+    # CRÉER L'ÉMETTEUR (paillettes nombreuses et légères)
+    emetteur = cmds.emitter(pos=[emetteur_x, emetteur_y, emetteur_z], name="emetteur_particules", type='omni',
+        rate=200,  # Beaucoup de petites particules
+        speed=3.0,  # Vitesse vers le haut
+        speedRandom=1.5,
+        directionX=0,
+        directionY=1,  # Direction vers le haut
+        directionZ=0,
+        spread=0.3  # Dispersion modérée
+)[0]
+    
+    # Connecter l'émetteur aux particules
+    cmds.connectDynamic(particule_shape, em=emetteur)
+    
+    # CRÉER LES CHAMPS DE FORCE
+    
+    # Gravité inversée (pousse vers le haut)
+    gravity_field = cmds.gravity( pos=[emetteur_x, emetteur_y, emetteur_z], name="gravity_up",
+        magnitude=9.8,  # Force positive pour aller vers le haut
+        attenuation=0,
+        directionX=0,
+        directionY=1,  # Direction Y positive = vers le haut
+        directionZ=0 )[0]
+    
+    # Connecter la gravité
+    cmds.connectDynamic(particule_shape, fields=gravity_field)
+    
+    # Turbulence (légère pour mouvement organique)
+    turbulence_field = cmds.turbulence(pos=[emetteur_x, emetteur_y, emetteur_z], name="turbulence_magique", magnitude=1.0,attenuation=0.2, frequency=1.5)[0]
+    
+    # Connecter la turbulence
+    cmds.connectDynamic(particule_shape, fields=turbulence_field)
+    
+    # CONFIGURER LES PARTICULES
+    
+    # Type de rendu : Points (plus petits que spheres)
+    cmds.setAttr(f"{particule_shape}.particleRenderType", 3)  # 3 = points, 4 = spheres
+    
+    # Taille des points (toutes petites paillettes)
+    cmds.addAttr(particule_shape, longName='radiusPP', dataType='doubleArray')
+    cmds.addAttr(particule_shape, longName='radiusPP0', dataType='doubleArray')
+    
+    expression_radius = """
+radiusPP = rand(0.01, 0.03);
+"""
+    cmds.dynExpression(particule_shape, string=expression_radius, creation=True)
+    
+    # Couleurs dorées scintillantes
+    cmds.addAttr(particule_shape, longName='rgbPP', dataType='vectorArray')
+    cmds.addAttr(particule_shape, longName='rgbPP0', dataType='vectorArray')
+    
+    expression_color = """
+// Variations de doré pour scintillement
+float $variation = rand(0.7, 1.0);
+vector $color = <<1.0 * $variation, 0.84 * $variation, 0.0>>;
+rgbPP = $color;
+"""
+    cmds.dynExpression(particule_shape, string=expression_color, creation=True)
+    
+    # Opacité qui diminue avec le temps
+    cmds.addAttr(particule_shape, longName='opacityPP', dataType='doubleArray')
+    cmds.addAttr(particule_shape, longName='opacityPP0', dataType='doubleArray')
+    
+    expression_opacity = """
+float $lifespan = 4.0;
+opacityPP = 1.0 - (age / $lifespan);
+if (opacityPP < 0) opacityPP = 0;
+"""
+    cmds.dynExpression(particule_shape, string=expression_opacity, runtimeBeforeDynamics=True)
+    
+    # Durée de vie
+    cmds.setAttr(f"{particule_shape}.lifespanMode", 2)
+    cmds.setAttr(f"{particule_shape}.lifespan", 4.0)
+    cmds.setAttr(f"{particule_shape}.lifespanRandom", 1.5)
+    
+    # ANIMER L'ÉMISSION
+    frame_fin_emission = frame_debut_particules + duree_emission
+    
+    cmds.setKeyframe(emetteur, attribute='rate', value=0, time=frame_debut_particules - 1)
+    cmds.setKeyframe(emetteur, attribute='rate', value=200, time=frame_debut_particules)
+    cmds.setKeyframe(emetteur, attribute='rate', value=200, time=frame_fin_emission - 10)
+    cmds.setKeyframe(emetteur, attribute='rate', value=0, time=frame_fin_emission)
+    
+    # SHADER (doré brillant)
+    shader_particules = cmds.shadingNode('lambert', asShader=True, name='shader_particules_magiques')
+    cmds.setAttr(shader_particules + ".color", 1.0, 0.84, 0.0, type="double3")  # Doré
+    cmds.setAttr(shader_particules + ".incandescence", 1.0, 0.9, 0.3, type="double3")  # Lueur
+    cmds.setAttr(shader_particules + ".glowIntensity", 0.5)
+    
+    sg_particules = cmds.sets(renderable=True, noSurfaceShader=True, empty=True, name='particulesSG')
+    cmds.connectAttr(shader_particules + ".outColor", sg_particules + ".surfaceShader", f=True)
+    cmds.sets(particule_shape, e=True, forceElement=sg_particules)
+    
+    print(f"Particules magiques créées ! Elles commencent à la frame {frame_debut_particules}")
+    
+    return particules
 
 def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, duree_totale):
     """
@@ -450,7 +476,6 @@ def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, dur
     all_controls.sort()
     
     # Sélectionner les pages qui ne sont PAS animées par animer_pages
-    # Ce sont toutes les pages SAUF les (nombre_pages_a_tourner+1) dernières
     controls_non_tournes = all_controls[:-(nombre_pages_a_tourner+1)]
     
     # PARAMÈTRES
@@ -468,9 +493,9 @@ def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, dur
         z_start = cmds.getAttr(f"{ctrl}.translateZ")
         
         # Numéro de la page
-        n = N - int(ctrl.split('_')[-2])  # Page_001_CTRL -> 0
+        n = N - int(ctrl.split('_')[-2])
         
-        # Formules pour les positions finales en arc (mêmes formules que animer_pages)
+        # Formules pour les positions finales en arc
         y_end = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
         z_end = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
         
@@ -482,48 +507,43 @@ def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, dur
         cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_fin)
         
         # Courbes fluides
-        cmds.keyTangent(ctrl, attribute='translateY', time=(frame_debut, frame_fin),
-                       inTangentType='spline', outTangentType='spline')
-        cmds.keyTangent(ctrl, attribute='translateZ', time=(frame_debut, frame_fin),
-                       inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='translateY', time=(frame_debut, frame_fin), inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='translateZ', time=(frame_debut, frame_fin), inTangentType='spline', outTangentType='spline')
 
-# Temps total de l'animation(modifiable)
-Temps_total = 150
+# paramètres
 
-#(modifiable)
+# Temps total de l'animation (modifiable)
+Temps_total = 200  # CHANGÉ DE 150 À 200
+
+# Nombre de pages (modifiable)
 nombre_pages = 50
 
-#(modifiable) mais laisser le -1
-nombre_pages_a_tourner=25-1
-# Temps avant ouverture grimoire (modifiable)
-frame_debut=10
+# Nombre de pages à tourner (modifiable) mais laisser le -1
+nombre_pages_a_tourner = 25 - 1
 
-# Pas moins de 4 sinon les pages on pas assez de temps pour tourner (pas touche !)
+# Temps avant ouverture grimoire (modifiable)
+frame_debut = 10
+
+# Pas moins de 4 sinon les pages n'ont pas assez de temps pour tourner (pas touche !)
 temps_minimum_animation_page = 4
 
 # Calcul du nombre d'images pour tourner une page
-duree_par_page=(Temps_total-frame_debut)//nombre_pages_a_tourner
-
-#print("durées pages :", duree_par_page)
+duree_par_page = (Temps_total - frame_debut) // nombre_pages_a_tourner
 
 # Sécurité : pour que chaque page ait le temps minimum pour tourner
-# Si t'as trop de pages à tourner par rapport au temps total on en tourne moins
-if(duree_par_page < temps_minimum_animation_page):
+if duree_par_page < temps_minimum_animation_page:
     print("trop de pages à tourner pour le temps imparti")
-    # Nouvelle valeur (celle minimum)
     duree_par_page = temps_minimum_animation_page
-    # Calcul du nombre de pages à tourner (le max qu'on puisse faire sans bug avec le temps qu'on nous a donné)
     nombre_pages_a_tourner = (Temps_total - frame_debut) // temps_minimum_animation_page
-    #print("nombre_pages_a_tourner :",nombre_pages_a_tourner)
     
 # Temps total des pages sans le temps avant l'ouverture du grimoire
 temps_total_mouvement = Temps_total - frame_debut
 
 # Dernier 1/10 des pages = ralenties
-nb_pages_lentes = max(1, nombre_pages_a_tourner // 10) #on peut changer le "10" pour modifier la proportion de pages ralenties mais faut changer les 20 % en 2* le nouveau nombre 
+nb_pages_lentes = max(1, nombre_pages_a_tourner // 10)
 nb_pages_normales = nombre_pages_a_tourner - nb_pages_lentes
 
-# Répartition du temps (20% pour pages lentes) donc les X dernières pages prennent 2 fois plus de temps
+# Répartition du temps (20% pour pages lentes)
 temps_pages_lentes = int(temps_total_mouvement * 0.20)
 temps_pages_normales = temps_total_mouvement - temps_pages_lentes
 
@@ -531,14 +551,16 @@ temps_pages_normales = temps_total_mouvement - temps_pages_lentes
 duree_normale = temps_pages_normales // nb_pages_normales
 duree_lente = temps_pages_lentes // nb_pages_lentes
 
-#print("Durée pages normales:", duree_normale)
-#print("Durée pages lentes:", duree_lente)
-
 # Variable globale pour le positionnement des locators en arc
 coordonnee_z = 3.3  # Position Z de la reliure (coordonnée de départ des locators)
 
+# éxécution 
 creer_pages(nombre_pages)
 rigger_pages()
-animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
+frame_fin_animation = animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
+
 # Les pages qui ne tournent pas restent en demi-cercle (pas d'animation)
 # animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
+
+# CRÉER LES PARTICULES MAGIQUES
+creer_particules_magiques(frame_fin_animation, duree_emission=60)
