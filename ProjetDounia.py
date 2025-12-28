@@ -345,74 +345,115 @@ def creer_particules_magiques(frame_debut_particules, duree_emission=60):
     """
     
     # Nettoyer les anciens systèmes
-    objets_a_supprimer = ["particules_magiques", "emetteur_particules", "gravity_up", "turbulence_magique", "shader_particules_magiques", "particulesSG"]
+    objets_a_supprimer = ["particules_magiques", "emetteur_particules", "gravity_up", "turbulence_magique", 
+                          "shader_particules_magiques", "particulesSG", "sphere_instance_1", "sphere_instance_2", 
+                          "sphere_instance_3", "instancer_particules"]
     
     for obj in objets_a_supprimer:
-        if cmds.objExists(obj): cmds.delete(obj)
+        if cmds.objExists(obj): 
+            cmds.delete(obj)
     
     # POSITION DE L'ÉMETTEUR
-    # Centre du livre (au milieu entre les deux arcs de pages)
     emetteur_x = 0
-    emetteur_y = 1.2  # Au niveau du centre des pages
-    emetteur_z = 3.3  # Position de la reliure (centre du livre)
+    emetteur_y = 1.2
+    emetteur_z = 3.3
     
     # CRÉER LE SYSTÈME DE PARTICULES
     particules = cmds.particle(name="particules_magiques")[0]
     particule_shape = cmds.listRelatives(particules, shapes=True)[0]
     
-    # CRÉER L'ÉMETTEUR (paillettes nombreuses et légères)
-    emetteur = cmds.emitter(pos=[emetteur_x, emetteur_y, emetteur_z], name="emetteur_particules", type='omni',
-        rate=200,  # Beaucoup de petites particules
-        speed=3.0,  # Vitesse vers le haut
+    # CRÉER L'ÉMETTEUR
+    emetteur = cmds.emitter(
+        pos=[emetteur_x, emetteur_y, emetteur_z], 
+        name="emetteur_particules", 
+        type='omni',
+        rate=200,
+        speed=3.0,
         speedRandom=1.5,
         directionX=0,
-        directionY=1,  # Direction vers le haut
+        directionY=1,
         directionZ=0,
-        spread=0.3  # Dispersion modérée
-)[0]
+        spread=0.3
+    )[0]
     
     # Connecter l'émetteur aux particules
     cmds.connectDynamic(particule_shape, em=emetteur)
     
     # CRÉER LES CHAMPS DE FORCE
-    
-    # Gravité inversée (pousse vers le haut)
-    gravity_field = cmds.gravity( pos=[emetteur_x, emetteur_y, emetteur_z], name="gravity_up",
-        magnitude=9.8,  # Force positive pour aller vers le haut
+    gravity_field = cmds.gravity(
+        pos=[emetteur_x, emetteur_y, emetteur_z], 
+        name="gravity_up",
+        magnitude=9.8,
         attenuation=0,
         directionX=0,
-        directionY=1,  # Direction Y positive = vers le haut
-        directionZ=0 )[0]
+        directionY=1,
+        directionZ=0
+    )[0]
     
-    # Connecter la gravité
     cmds.connectDynamic(particule_shape, fields=gravity_field)
     
-    # Turbulence (légère pour mouvement organique)
-    turbulence_field = cmds.turbulence(pos=[emetteur_x, emetteur_y, emetteur_z], name="turbulence_magique", magnitude=1.0,attenuation=0.2, frequency=1.5)[0]
+    turbulence_field = cmds.turbulence(
+        pos=[emetteur_x, emetteur_y, emetteur_z], 
+        name="turbulence_magique", 
+        magnitude=1.0,
+        attenuation=0.2, 
+        frequency=1.5
+    )[0]
     
-    # Connecter la turbulence
     cmds.connectDynamic(particule_shape, fields=turbulence_field)
     
-    # CONFIGURER LES PARTICULES
+    # SHADER pour les sphères (doré brillant)
+    shader_particules = cmds.shadingNode('lambert', asShader=True, name='shader_particules_magiques')
+    cmds.setAttr(shader_particules + ".color", 1.0, 0.84, 0.0, type="double3")
+    cmds.setAttr(shader_particules + ".incandescence", 1.0, 0.9, 0.3, type="double3")
+    cmds.setAttr(shader_particules + ".glowIntensity", 0.5)
     
-    # Type de rendu : Points (plus petits que spheres)
-    cmds.setAttr(f"{particule_shape}.particleRenderType", 3)  # 3 = points, 4 = spheres
+    sg_particules = cmds.sets(renderable=True, noSurfaceShader=True, empty=True, name='particulesSG')
+    cmds.connectAttr(shader_particules + ".outColor", sg_particules + ".surfaceShader", f=True)
     
-    # Taille des points (toutes petites paillettes)
-    cmds.addAttr(particule_shape, longName='radiusPP', dataType='doubleArray')
-    cmds.addAttr(particule_shape, longName='radiusPP0', dataType='doubleArray')
+    # CRÉER PLUSIEURS SPHÈRES DE TAILLES DIFFÉRENTES 
+    sphere1 = cmds.polySphere(name="sphere_instance_1", radius=0.04, subdivisionsAxis=6, subdivisionsHeight=6)[0]
+    sphere2 = cmds.polySphere(name="sphere_instance_2", radius=0.05, subdivisionsAxis=6, subdivisionsHeight=6)[0]
+    sphere3 = cmds.polySphere(name="sphere_instance_3", radius=0.06, subdivisionsAxis=6, subdivisionsHeight=6)[0]
     
-    expression_radius = """
-radiusPP = rand(0.01, 0.03);
+    # Assigner le shader aux sphères
+    cmds.sets([sphere1, sphere2, sphere3], e=True, forceElement=sg_particules)
+    
+    # AJOUTER L'ATTRIBUT objectIndex pour choisir quelle sphère utiliser
+    cmds.addAttr(particule_shape, longName='objectIndex', dataType='doubleArray')
+    cmds.addAttr(particule_shape, longName='objectIndex0', dataType='doubleArray')
+    
+    # Expression pour assigner aléatoirement une des 3 sphères à chaque particule
+    expression_index = """
+objectIndex = floor(rand(0, 2.99));
 """
-    cmds.dynExpression(particule_shape, string=expression_radius, creation=True)
+    cmds.dynExpression(particule_shape, string=expression_index, creation=True)
+    
+    # CRÉER L'INSTANCIER avec les 3 sphères
+    instancer = cmds.particleInstancer(
+        particule_shape,
+        name="instancer_particules",
+        object=[sphere1, sphere2, sphere3],
+        cycle='None',
+        cycleStep=1,
+        cycleStepUnits='Frames',
+        levelOfDetail='Geometry',
+        rotationUnits='Degrees',
+        rotationOrder='XYZ',
+        age='age',
+        objectIndex='objectIndex'
+    )
+    
+    # Cacher les sphères originales
+    cmds.hide(sphere1, sphere2, sphere3)
+    
+    # CONFIGURER LES PARTICULES
     
     # Couleurs dorées scintillantes
     cmds.addAttr(particule_shape, longName='rgbPP', dataType='vectorArray')
     cmds.addAttr(particule_shape, longName='rgbPP0', dataType='vectorArray')
     
     expression_color = """
-// Variations de doré pour scintillement
 float $variation = rand(0.7, 1.0);
 vector $color = <<1.0 * $variation, 0.84 * $variation, 0.0>>;
 rgbPP = $color;
@@ -443,17 +484,8 @@ if (opacityPP < 0) opacityPP = 0;
     cmds.setKeyframe(emetteur, attribute='rate', value=200, time=frame_fin_emission - 10)
     cmds.setKeyframe(emetteur, attribute='rate', value=0, time=frame_fin_emission)
     
-    # SHADER (doré brillant)
-    shader_particules = cmds.shadingNode('lambert', asShader=True, name='shader_particules_magiques')
-    cmds.setAttr(shader_particules + ".color", 1.0, 0.84, 0.0, type="double3")  # Doré
-    cmds.setAttr(shader_particules + ".incandescence", 1.0, 0.9, 0.3, type="double3")  # Lueur
-    cmds.setAttr(shader_particules + ".glowIntensity", 0.5)
-    
-    sg_particules = cmds.sets(renderable=True, noSurfaceShader=True, empty=True, name='particulesSG')
-    cmds.connectAttr(shader_particules + ".outColor", sg_particules + ".surfaceShader", f=True)
-    cmds.sets(particule_shape, e=True, forceElement=sg_particules)
-    
     print(f"Particules magiques créées ! Elles commencent à la frame {frame_debut_particules}")
+    print(f"Tailles paillettes : 0.02, 0.03, 0.04")
     
     return particules
 
@@ -513,7 +545,7 @@ def animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, dur
 # paramètres
 
 # Temps total de l'animation (modifiable)
-Temps_total = 200  # CHANGÉ DE 150 À 200
+Temps_total = 200
 
 # Nombre de pages (modifiable)
 nombre_pages = 50
@@ -552,7 +584,7 @@ duree_normale = temps_pages_normales // nb_pages_normales
 duree_lente = temps_pages_lentes // nb_pages_lentes
 
 # Variable globale pour le positionnement des locators en arc
-coordonnee_z = 3.3  # Position Z de la reliure (coordonnée de départ des locators)
+coordonnee_z = 3.3
 
 # éxécution 
 creer_pages(nombre_pages)
