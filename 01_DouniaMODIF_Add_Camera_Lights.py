@@ -624,7 +624,7 @@ def gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin
     cmds.setKeyframe(renderCam, attribute='rotateZ', value=0, time = frame_fin_animation)
 
     # Début des particules : on bouge pas au début
-    finAnim_plus_emission_0_5 = frame_fin_animation + duree_emission / 2
+    finAnim_plus_emission_0_5 = int(frame_fin_animation + duree_emission / 2)
     cmds.setKeyframe(renderCam, attribute='translateX', value=21, time = finAnim_plus_emission_0_5)
     cmds.setKeyframe(renderCam, attribute='translateY', value=18, time = finAnim_plus_emission_0_5)
     cmds.setKeyframe(renderCam, attribute='translateZ', value=4.338, time = finAnim_plus_emission_0_5)
@@ -633,7 +633,7 @@ def gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin
     cmds.setKeyframe(renderCam, attribute='rotateZ', value=0, time = finAnim_plus_emission_0_5)
 
     # On arrive sur un plan zénithal et travelling avant lors de la 2e moitié de l'émission des particules
-    finAnim_plus_emission_1_75 = frame_fin_animation + duree_emission * 1.75
+    finAnim_plus_emission_1_75 = int(frame_fin_animation + duree_emission * 1.75)
     cmds.setKeyframe(renderCam, attribute='translateX', value=1.84, time = finAnim_plus_emission_1_75)
     cmds.setKeyframe(renderCam, attribute='translateY', value=23.412, time = finAnim_plus_emission_1_75)
     cmds.setKeyframe(renderCam, attribute='translateZ', value=4.427, time = finAnim_plus_emission_1_75)
@@ -642,7 +642,7 @@ def gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin
     cmds.setKeyframe(renderCam, attribute='rotateZ', value=0, time = finAnim_plus_emission_1_75)
 
     # On bouge pas pendant qq frames
-    finAnim_plus_emission_1_92 = frame_fin_animation + duree_emission * 1.92
+    finAnim_plus_emission_1_92 = int(frame_fin_animation + duree_emission * 1.92)
     cmds.setKeyframe(renderCam, attribute='translateX', value=1.84, time = finAnim_plus_emission_1_92)
     cmds.setKeyframe(renderCam, attribute='translateY', value=23.412, time = finAnim_plus_emission_1_92)
     cmds.setKeyframe(renderCam, attribute='translateZ', value=4.427, time = finAnim_plus_emission_1_92)
@@ -651,13 +651,15 @@ def gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin
     cmds.setKeyframe(renderCam, attribute='rotateZ', value=0, time = finAnim_plus_emission_1_92)
 
     # Travelling sur la page avec le PNG du Lighting de Matea
-    finAnim_plus_emission_2_5 = frame_fin_animation + duree_emission * 2.85
+    finAnim_plus_emission_2_5 = int(frame_fin_animation + duree_emission * 2.85)
     cmds.setKeyframe(renderCam, attribute='translateX', value=0.153, time = finAnim_plus_emission_2_5)
     cmds.setKeyframe(renderCam, attribute='translateY', value=7.147, time = finAnim_plus_emission_2_5)
     cmds.setKeyframe(renderCam, attribute='translateZ', value=0.444, time = finAnim_plus_emission_2_5)
     cmds.setKeyframe(renderCam, attribute='rotateX', value=-90, time = finAnim_plus_emission_2_5)
     cmds.setKeyframe(renderCam, attribute='rotateY', value=90, time = finAnim_plus_emission_2_5)
     cmds.setKeyframe(renderCam, attribute='rotateZ', value=0, time = finAnim_plus_emission_2_5)
+
+    return finAnim_plus_emission_2_5
 
 # paramètres
 
@@ -717,4 +719,5 @@ duree_emission = 60
 creer_particules_magiques(frame_fin_animation, duree_emission)
 
 # CRÉER ET ANIMER LES CAMERAS ET LIGHTS
-gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin_animation)
+derniere_frame_animee = gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin_animation)
+cmds.playbackOptions(minTime=0, maxTime= derniere_frame_animee + 24)
