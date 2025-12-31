@@ -23,12 +23,22 @@ def creer_pages(nombre_pages):
     all_pages = []
     
     # Position fixe du bord de la reliure pour TOUTES les pages
-    reliure_z = 3.3  # Position fixe en Z du bord de la reliure
+    reliure_z = 0 # Position fixe en Z du bord de la reliure, avant = 3.3
+
+    # PARAMETRES DE PAGES
+    epaisseur = .015
+
+    # Modification de l'épaisseur du grimoire
+    mySpineH = epaisseur * nombre_pages # Calcul de la hauteur de toutes les pages les une sur les autres (pour savoir s'il faut agrandir la reliure)
+    if (mySpineH > defaultSpineH): # Agrandir la reliure si nécessaire
+        cmds.move(0, mySpineH - defaultSpineH, 0, bookSizeCtrl, a=True)
+    else: # Sinon retourner à la taille par défaut au cas où
+        cmds.move(0, 0, 0, bookSizeCtrl, a=True)
     
     # PARAMÈTRES DU DEMI-CERCLE
     # Rayon du demi-cercle formé par les pages
-    rayon = (nombre_pages * 0.015) / math.pi  # Le rayon est calculé pour que l'arc corresponde à l'épaisseur totale
-    y_base = 0.42  # Position Y de base (bas du demi-cercle)
+    rayon = defaultSpineH / math.pi  # Le rayon est calculé pour que l'arc corresponde à l'épaisseur totale, avant = (nombre_pages * 0.015) / math.pi
+    y_base = 0  # Position Y de base (bas du demi-cercle), avant = .42
     
     # Boucle pour créer chaque page
     for i in range(nombre_pages):
@@ -38,14 +48,14 @@ def creer_pages(nombre_pages):
         
         # Créer un cube plat pour représenter une page
         # [0] récupère le transform node
-        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=0.02, d=depth, sx=12, sy=12, sz=12)[0]
+        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=width, h=epaisseur, d=depth, sx=12, sy=12, sz=12)[0]
         
         # POSITION EN DEMI-CERCLE
-        # Angle pour cette page (de π à 0 pour un demi-cercle, inversé pour partir du haut)
-        angle = math.pi - (i / (nombre_pages - 1)) * math.pi
+        # Angle pour cette page (de π à 0 pour un demi-cercle, inversé pour partir du haut), avant = math.pi - (i / (nombre_pages - 1)) * math.pi
+        angle = math.pi * (i / (nombre_pages - 1) - 1/2)
         
-        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle
-        y_pos = y_base + i * 0.015 + rayon * math.sin(angle)
+        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle, avant = y_base + i * 0.015 + rayon * math.sin(angle)
+        y_pos = y_base + rayon * (math.sin(angle) + 1)
         
         # Petite variation aléatoire en X
         x_offset = random.uniform(-0.05, 0.05)
@@ -57,8 +67,8 @@ def creer_pages(nombre_pages):
         t = i / (nombre_pages - 1)
         # Ondulation : bas rentré, milieu sorti davantage, haut rentré
         ondulation = math.sin(t * math.pi) * 0.15
-        # Ajouter la composante horizontale du cercle + ondulation
-        z_pos = z_base + rayon * (1 - math.cos(angle)) + ondulation
+        # Ajouter la composante horizontale du cercle + ondulation, avant = z_base + rayon * (1 - math.cos(angle)) + ondulation
+        z_pos = z_base + rayon * math.cos(angle) + ondulation
         
         # Déplacer la page à sa position finale
         cmds.move(x_offset, y_pos, z_pos, page)
@@ -266,8 +276,8 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         n = i
         
         # Formules pour les positions finales en arc
-        y_end = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
-        z_end = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
+        y_end = 0 # avant = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
+        z_end = epaisseur * (nombre_pages - i) # avant = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
     
         # ANIMATION DE ROTATION (axe X)
         cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_actuelle)
@@ -774,8 +784,14 @@ temps_pages_normales = temps_total_mouvement - temps_pages_lentes
 duree_normale = temps_pages_normales // nb_pages_normales
 duree_lente = temps_pages_lentes // nb_pages_lentes
 
+# Paramètres du rig de la couverture
+bookSizeCtrl = "majia_model_grimoire_publish:bookSize_ctrl" # Donner ici le nom du groupe controleur qui sert à animer la hauteur de la reliure du livre
+coverCtrl = "majia_model_grimoire_publish:cover_ctrl" # Donner ici le nom du groupe controleur qui sert à rotate la couverture du livre
+spineCtrl = "majia_model_grimoire_publish:spine_ctrl" # Donner ici le nom du groupe controleur qui sert à rotate la reliure du livre
+defaultSpineH = 1.33 # Largeur de la reliure lorsque le livre est ouvert et que la hauteur de la reliure n'a pas été modifiée par le controleur (sert pour les calculs plus tard)
+
 # Variable globale pour le positionnement des locators en arc
-coordonnee_z = 3.3
+#coordonnee_z = 3.3
 
 # éxécution 
 creer_pages(nombre_pages)
