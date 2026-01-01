@@ -53,8 +53,6 @@ def creer_pages(nombre_pages):
         debutDeuxiemeQuart = nombre_pages - finPremierQuart
         nbPagesCercle = finPremierQuart * 2
 
-    print(finPremierQuart, debutDeuxiemeQuart, nbPagesCercle)
-
     # Calcul des coordonnées de création de chaque page
     coordonnees = []
 
@@ -85,12 +83,8 @@ def creer_pages(nombre_pages):
         coordonnees.append((w, d, x, y, z))
 
     # Pour la ligne droite
-    """
-    angle = math.pi * (finPremierQuart / (nbPagesCercle - 1) - 1/2)
-    y_offset = y_base + rayon * (math.sin(angle) + 1)
-    z_offset = rayon * math.cos(angle)
-    """
-    y_offset = y
+    # On récupère la dernière position y et z pour commencer à poser les pages à partir de la 
+    y_offset = y 
     z_offset = z - z_base - ondulation
 
     for i in range(finPremierQuart, debutDeuxiemeQuart):
@@ -117,11 +111,7 @@ def creer_pages(nombre_pages):
         coordonnees.append((w, d, x, y, z))
 
     # Pour le deuxieme arc
-    """
-    angle = math.pi * (debutDeuxiemeQuart / (nbPagesCercle - 1) - 1/2)
-    y_offset = y_base + rayon * (math.sin(angle) + 1)
-    """
-    y_offset = y - y_offset
+    y_offset = y - y_offset # On récupère la dernière position y et z pour commencer à poser les pages à partir de la
 
     for i in range(debutDeuxiemeQuart, nombre_pages):
         angle = math.pi * ((i - debutDeuxiemeQuart + finPremierQuart) / (nbPagesCercle - 1) - 1/2)
@@ -148,7 +138,6 @@ def creer_pages(nombre_pages):
 
         coordonnees.append((w, d, x, y, z))
     
-    print(len(coordonnees))
     # Boucle pour créer chaque page
     for i in range(nombre_pages):
         (w, d, x, y, z) = coordonnees[i]
@@ -218,7 +207,7 @@ def creer_pages(nombre_pages):
         # On récupère les coordonnées du bord de chaque page 
         bbox = cmds.exactWorldBoundingBox(une_page)
         pivot_x = (bbox[0] + bbox[3]) / 2
-        pivot_y = -3
+        pivot_y = cmds.getAttr(f"{page}.translateY") # avant = -3
         pivot_z = bbox[5]
             
         # On sélectionne la page sur laquelle ajouter un bend
@@ -228,7 +217,7 @@ def creer_pages(nombre_pages):
         
         # Parenter le bend au groupe
         cmds.parent(bend_handle, bend_grp)
-            
+        
         # Déplacer et rotater le bend sur le bord de la page
         cmds.move(pivot_x, pivot_y, pivot_z, bend_handle)
         cmds.rotate(90, -90, -90, bend_handle)
@@ -1008,10 +997,11 @@ frame_fin_animation = animer_pages(nombre_pages_a_tourner, frame_debut, duree_no
 # animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
 
 duree_emission = 60
-
+"""
 # CRÉER LES PARTICULES MAGIQUES
 creer_particules_magiques(frame_fin_animation, duree_emission)
 
 # CRÉER ET ANIMER LES CAMERAS ET LIGHTS
 derniere_frame_animee = gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin_animation)
 cmds.playbackOptions(minTime=0, maxTime= derniere_frame_animee + 48)
+"""
