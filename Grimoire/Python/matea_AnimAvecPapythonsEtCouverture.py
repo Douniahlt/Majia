@@ -1096,11 +1096,10 @@ frame_fin_animation = animer_pages(all_bends, nombre_pages_a_tourner, frame_debu
 # animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
 
 duree_emission = 60
-"""
+
 # CRÉER LES PARTICULES MAGIQUES
 creer_particules_magiques(frame_fin_animation, duree_emission)
 
 # CRÉER ET ANIMER LES CAMERAS ET LIGHTS
 derniere_frame_animee = gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin_animation)
 cmds.playbackOptions(minTime=0, maxTime= derniere_frame_animee + 48)
-"""
