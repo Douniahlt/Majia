@@ -544,6 +544,8 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     # Mettre à jour la timeline de Maya pour afficher toute l'animation (avec marge pour les particules)
     #cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale + 80)
 
+    # Rangement des groupes de bend et de pages dans le groupe du livre
+    cmds.parent(["Bend_GRP", "Pages_RIG_GRP"], bookGRP)
 
 
     # Retourner la frame finale pour savoir quand démarrer les particules
@@ -960,9 +962,6 @@ frame_ouvre = 37
 if not (frame_ouvre - frame_ferme > 4): # Sécurité si l'utilisateur n'a pas donné assez de temps
     frame_ouvre = frame_ferme + 5
 
-# Angle d'ouverture finale du livre
-angleOpen = 
-
 # Pas moins de 4 sinon les pages n'ont pas assez de temps pour tourner (pas touche !)
 temps_minimum_animation_page = 4
 
@@ -991,6 +990,7 @@ duree_normale = temps_pages_normales // nb_pages_normales
 duree_lente = temps_pages_lentes // nb_pages_lentes
 
 # Paramètres du rig de la couverture
+bookGRP = "majia_model_grimoire_publish:grimoire_grp" # Donner ici le nom du groupe qui contient tout le grimoire
 bookSizeCtrl = "majia_model_grimoire_publish:bookSize_ctrl" # Donner ici le nom du groupe controleur qui sert à animer la hauteur de la reliure du livre
 coverCtrl = "majia_model_grimoire_publish:cover_ctrl" # Donner ici le nom du groupe controleur qui sert à rotate la couverture du livre
 spineCtrl = "majia_model_grimoire_publish:spine_ctrl" # Donner ici le nom du groupe controleur qui sert à rotate la reliure du livre
@@ -1009,11 +1009,9 @@ frame_fin_animation = animer_pages(nombre_pages_a_tourner, frame_debut, duree_no
 
 duree_emission = 60
 
-"""
 # CRÉER LES PARTICULES MAGIQUES
 creer_particules_magiques(frame_fin_animation, duree_emission)
 
 # CRÉER ET ANIMER LES CAMERAS ET LIGHTS
 derniere_frame_animee = gestion_lights_et_camera(Temps_total, frame_debut, duree_emission, frame_fin_animation)
 cmds.playbackOptions(minTime=0, maxTime= derniere_frame_animee + 48)
-"""
