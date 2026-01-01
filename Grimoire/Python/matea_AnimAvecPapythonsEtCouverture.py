@@ -437,7 +437,12 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         
         # ANIMATION DU ROTATE DE TOUS LES CONTROLEURS
 
-        maxAngle = 30
+        maxAngle = 90 * (1 - math.exp(-.00811 * nombre_pages)) # Formule trouvée expérimentalement
+        """
+        maxAngle = 30 * nombre_pages / 50
+        if (maxAngle > 90):
+            maxAngle = 90
+        """
         angle = (i+1) * maxAngle / nombre_pages
 
         cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_ferme)
@@ -510,6 +515,7 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
 
         # Trouver les angles de début et de fin
         curvAngle_start = cmds.getAttr(bend_deformer + ".curvature", time=frame_actuelle)
+        curvAngle_mid = -nombre_pages / 20 + 102.5 # Formule trouvée expériementalement
         curvAngle_end = -2 * (rotate_x_end - 180)
 
         # Enlever les clefs qui existent déjà pendant la rotation s'il y en a
@@ -520,7 +526,7 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
 
         # Animation du bend
         cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_start, time=frame_actuelle, inTangentType="plateau", outTangentType="spline")
-        cmds.setKeyframe(bend_deformer, attribute="curvature", value=100, time=frame_mid, inTangentType="spline", outTangentType="linear")
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_mid, time=frame_mid, inTangentType="spline", outTangentType="linear")
         cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_end, time=frame_fin, inTangentType="auto")
 
         if (frame_actuelle < frame_ouvre):
