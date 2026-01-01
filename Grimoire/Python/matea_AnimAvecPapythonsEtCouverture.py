@@ -197,7 +197,7 @@ def creer_pages(nombre_pages):
         """
 
     # Création d'un groupe vide qui contiendra les bends des pages
-    bend_grp = cmds.group(empty=True, name="Bend_GRP")
+    #bend_grp = cmds.group(empty=True, name="Bend_GRP")
     all_bends = []
     
     for i in range(nombre_pages):
@@ -213,7 +213,7 @@ def creer_pages(nombre_pages):
         bend_deformer = bend_result[0] # On récupère le node avec les parametres du bend
         bend_handle = bend_result[1]  # On récupère seulement le handle
         # Parenter le bend au groupe
-        cmds.parent(bend_handle, bend_grp)
+        #cmds.parent(bend_handle, bend_grp)
 
         # Déplacer et rotater le bend sur le bord de la page
         cmds.move(x, y, z+d, bend_handle)
@@ -433,6 +433,31 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         cmds.setKeyframe(ctrl, attribute='translateZ', value=z_start, time=frame_ferme, outTangentType="linear")
         cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_ouvre)
 
+        # En meme temps que les pages se translates, elles doivent se rotate pour s'empiler les une sur les autres, et le bend doit compenser en se rotatant dans l'autre sens pour que les pages restent "sur le sol"
+        
+        # ANIMATION DU ROTATE DE TOUS LES CONTROLEURS
+
+        maxAngle = 30
+        angle = (i+1) * maxAngle / nombre_pages
+
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_ferme)
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=angle, time=frame_ouvre)
+        
+        # ANIMATION COMPENSATOIRE DES BENDS
+
+        myBend = all_bends[i]
+        bend_deformer = myBend[0]
+
+        curvAngle = -2 * angle
+
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=0, time=frame_ferme)
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle, time=frame_ouvre, inTangentType="linear")
+
+        # Change l'endroit ou la courbe se crée
+        cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-1, time=frame_ferme, outTangentType="linear")
+        cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-.5, time=frame_ouvre, inTangentType="linear")
+        
+
     # ANIMER LA ROTATION DE LA COUVERTURE AVEC LA TRANSLATION DES PAGES
 
     # Clean les animations précédentes s'il y en a
@@ -449,22 +474,27 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
     
     cmds.setKeyframe(spineCtrl, attribute='rotateX', value=0, time=frame_ferme)
     cmds.setKeyframe(spineCtrl, attribute='rotateX', value=90, time=frame_ouvre)
-
+    
     # BOUCLE POUR ANIMER LA ROTATION DES PAGES LES UNES APRES LES AUTRES
     
     frame_actuelle = frame_debut
     for i, ctrl in enumerate(controls_a_animer):
         duree = durations[i] 
+        frame_fin = frame_actuelle + duree
+
+        # Trouver les angles de début et de fin de la rotation
+        rotate_x_start = cmds.getAttr(ctrl + ".rotateX", time=frame_actuelle)
+        rotate_x_end = 180 - i * maxAngle / nombre_pages
+
+        # Enlever les clefs qui existent déjà pendant la rotation s'il y en a
+        cmds.cutKey(ctrl, attribute="rotateX", time=(frame_actuelle, frame_fin))
 
         # ANIMATION DE ROTATION (axe X)
-        cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_actuelle)
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=rotate_x_start, time=frame_actuelle)
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=rotate_x_end, time=frame_fin)
         
-        frame_fin = frame_actuelle + duree
-        
-        cmds.setKeyframe(ctrl, attribute='rotateX', value=180, time=frame_fin)
-        
-        cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), 
-                       inTangentType='spline', outTangentType='spline')
+        #cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), inTangentType='spline', outTangentType='spline')
+        cmds.keyTangent(ctrl, attribute='rotateX', inTangentType='auto', outTangentType='auto')
         
         # VARIATION ALÉATOIRE EN Z
         variation_z = random.uniform(-1, 1)
@@ -473,10 +503,39 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         cmds.setKeyframe(ctrl, attribute='rotateZ', value=variation_z, time=frame_actuelle + duree//2)
         cmds.setKeyframe(ctrl, attribute='rotateZ', value=0, time=frame_fin)
         
+        # ANIMTAION DU BEND AVEC POSE DE FIN COMPENSATOIRE
+
+        print(nombre_pages, i, nombre_pages - i - 1)
+
+        myBend = all_bends[nombre_pages - i - 1]
+        bend_deformer = myBend[0]
+
+        # Trouver les angles de début et de fin
+        curvAngle_start = cmds.getAttr(bend_deformer + ".curvature", time=frame_actuelle)
+        curvAngle_end = -2 * (rotate_x_end - 180)
+
+        # Enlever les clefs qui existent déjà pendant la rotation s'il y en a
+        cmds.cutKey(bend_deformer, attribute="curvature", time=(frame_actuelle, frame_fin))
+
+        # Ajout d'une clef au milieu pour le mouvement de la page qui se tourne
+        frame_mid = int((frame_actuelle + frame_fin) / 2)
+
+        # Animation du bend
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_start, time=frame_actuelle, inTangentType="slow", outTangentType="spline")
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=100, time=frame_mid, inTangentType="spline", outTangentType="linear")
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_end, time=frame_fin, inTangentType="auto")
+
+        # Change l'endroit ou la courbe se crée
+        cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-.5, time=frame_actuelle, outTangentType="linear")
+        cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-1, time=frame_mid, outTangentType="linear")
+        cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-.5, time=frame_fin, inTangentType="linear")
+
+        cmds.keyTangent(bend_deformer, attribute="lowBound", inTangentType='linear', outTangentType='linear')
+        
         # CHEVAUCHEMENT (OVERLAP)
         frame_actuelle += duree - 2
-        
-    """ ANCIENNE BOUCLE
+       
+    """ ANCIENNES BOUCLES
     for i, ctrl in enumerate(controls_a_animer):
         duree = durations[i] 
         
@@ -527,8 +586,7 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         
         # CHEVAUCHEMENT (OVERLAP)
         frame_actuelle += duree - 2
-    """
-
+    
     frame_actuelle = frame_debut
 
     M = len(bends_a_animer)
@@ -558,6 +616,7 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         cmds.setKeyframe(bend_node, attribute='curvature', value=0, time=frame_fin)
 
         frame_actuelle += duree - 2
+    """
     
     # Ajouter une pause de 20 frames à la fin
     frame_finale = frame_actuelle + 10
@@ -566,7 +625,8 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
     #cmds.playbackOptions(minTime=frame_debut, maxTime=frame_finale + 80)
 
     # Rangement des groupes de bend et de pages dans le groupe du livre
-    cmds.parent(["Bend_GRP", "Pages_RIG_GRP"], bookGRP)
+    #cmds.parent(["Bend_GRP", "Pages_RIG_GRP"], bookGRP)
+    cmds.parent("Pages_RIG_GRP", bookGRP)
 
 
     # Retourner la frame finale pour savoir quand démarrer les particules
