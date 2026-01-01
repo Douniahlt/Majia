@@ -505,8 +505,6 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         
         # ANIMTAION DU BEND AVEC POSE DE FIN COMPENSATOIRE
 
-        print(nombre_pages, i, nombre_pages - i - 1)
-
         myBend = all_bends[nombre_pages - i - 1]
         bend_deformer = myBend[0]
 
@@ -521,9 +519,12 @@ def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_
         frame_mid = int((frame_actuelle + frame_fin) / 2)
 
         # Animation du bend
-        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_start, time=frame_actuelle, inTangentType="slow", outTangentType="spline")
+        cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_start, time=frame_actuelle, inTangentType="plateau", outTangentType="spline")
         cmds.setKeyframe(bend_deformer, attribute="curvature", value=100, time=frame_mid, inTangentType="spline", outTangentType="linear")
         cmds.setKeyframe(bend_deformer, attribute="curvature", value=curvAngle_end, time=frame_fin, inTangentType="auto")
+
+        if (frame_actuelle < frame_ouvre):
+            cmds.keyTangent(bend_deformer, attribute="curvature", time=(frame_ferme, frame_actuelle), inTangentType="linear", outTangentType="fast")
 
         # Change l'endroit ou la courbe se crée
         cmds.setKeyframe(bend_deformer, attribute="lowBound", value=-.5, time=frame_actuelle, outTangentType="linear")
