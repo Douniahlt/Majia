@@ -31,15 +31,142 @@ def creer_pages(nombre_pages):
     # Modification de l'épaisseur du grimoire
     mySpineH = epaisseur * nombre_pages # Calcul de la hauteur de toutes les pages les une sur les autres (pour savoir s'il faut agrandir la reliure)
     if (mySpineH > defaultSpineH): # Agrandir la reliure si nécessaire
-        cmds.move(0, mySpineH - defaultSpineH, 0, bookSizeCtrl, a=True)
+        spineMove = mySpineH - defaultSpineH
     else: # Sinon retourner à la taille par défaut au cas où
-        cmds.move(0, 0, 0, bookSizeCtrl, a=True)
+        spineMove = 0
+    cmds.move(0, spineMove, 0, bookSizeCtrl, a=True)
     
     # PARAMÈTRES DU DEMI-CERCLE
+
     # Rayon du demi-cercle formé par les pages
     rayon = defaultSpineH / math.pi  # Le rayon est calculé pour que l'arc corresponde à l'épaisseur totale, avant = (nombre_pages * 0.015) / math.pi
     y_base = 0  # Position Y de base (bas du demi-cercle), avant = .42
     
+    # Certaines pages vont fomer des demi cercles et d'autres une ligne, on chercher à quelle numéro de page on passe d'un protocole à l'autre
+    default_nombre_pages = int(defaultSpineH / epaisseur)
+    if (nombre_pages < default_nombre_pages):
+        finPremierQuart = int(nombre_pages / 2)
+        debutDeuxiemeQuart = finPremierQuart
+        nbPagesCercle = nombre_pages
+    else:
+        finPremierQuart = int(default_nombre_pages / 2)
+        debutDeuxiemeQuart = nombre_pages - finPremierQuart
+        nbPagesCercle = finPremierQuart * 2
+
+    print(finPremierQuart, debutDeuxiemeQuart, nbPagesCercle)
+
+    # Calcul des coordonnées de création de chaque page
+    coordonnees = []
+
+    # Pour le premier quart de cercle
+    for i in range(finPremierQuart):
+        angle = math.pi * (i / (nbPagesCercle - 1) - 1/2)
+
+        # Variation aléatoire de la taille
+        w = 9.4 - random.uniform(0, 0.1)  # Largeur entre 9.3 et 9.4
+        d = 6.6 - random.uniform(0, 0.1)
+
+        # Petite variation aléatoire en X
+        x = random.uniform(-0.05, 0.05)
+        
+        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle, avant = y_base + i * 0.015 + rayon * math.sin(angle)
+        y = y_base + rayon * (math.sin(angle) + 1)
+
+        # CALCUL DE LA POSITION EN Z pour le demi-cercle avec ondulation
+        # Base Z (position du bord de reliure aligné)
+        z_base = reliure_z - d/2
+        # Progression normalisée (0 à 1)
+        t = i / (nombre_pages - 1)
+        # Ondulation : bas rentré, milieu sorti davantage, haut rentré
+        ondulation = math.sin(t * math.pi) * 0.15
+        # Ajouter la composante horizontale du cercle + ondulation, avant = z_base + rayon * (1 - math.cos(angle)) + ondulation
+        z = z_base + rayon * math.cos(angle) + ondulation
+
+        coordonnees.append((w, d, x, y, z))
+
+    # Pour la ligne droite
+    """
+    angle = math.pi * (finPremierQuart / (nbPagesCercle - 1) - 1/2)
+    y_offset = y_base + rayon * (math.sin(angle) + 1)
+    z_offset = rayon * math.cos(angle)
+    """
+    y_offset = y
+    z_offset = z - z_base - ondulation
+
+    for i in range(finPremierQuart, debutDeuxiemeQuart):
+        # Variation aléatoire de la taille
+        w = 9.4 - random.uniform(0, 0.1)  # Largeur entre 9.3 et 9.4
+        d = 6.6 - random.uniform(0, 0.1)
+
+        # Petite variation aléatoire en X
+        x = random.uniform(-0.05, 0.05)
+        
+        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle, avant = y_base + i * 0.015 + rayon * math.sin(angle)
+        y = y_offset + (i-finPremierQuart) * epaisseur
+
+        # CALCUL DE LA POSITION EN Z pour le demi-cercle avec ondulation
+        # Base Z (position du bord de reliure aligné)
+        z_base = reliure_z - d/2
+        # Progression normalisée (0 à 1)
+        t = i / (nombre_pages - 1)
+        # Ondulation : bas rentré, milieu sorti davantage, haut rentré
+        ondulation = math.sin(t * math.pi) * 0.15
+        # Ajouter la composante horizontale du cercle + ondulation, avant = z_base + rayon * (1 - math.cos(angle)) + ondulation
+        z = z_base + z_offset + ondulation
+
+        coordonnees.append((w, d, x, y, z))
+
+    # Pour le deuxieme arc
+    """
+    angle = math.pi * (debutDeuxiemeQuart / (nbPagesCercle - 1) - 1/2)
+    y_offset = y_base + rayon * (math.sin(angle) + 1)
+    """
+    y_offset = y - y_offset
+
+    for i in range(debutDeuxiemeQuart, nombre_pages):
+        angle = math.pi * ((i - debutDeuxiemeQuart + finPremierQuart) / (nbPagesCercle - 1) - 1/2)
+
+        # Variation aléatoire de la taille
+        w = 9.4 - random.uniform(0, 0.1)  # Largeur entre 9.3 et 9.4
+        d = 6.6 - random.uniform(0, 0.1)
+
+        # Petite variation aléatoire en X
+        x = random.uniform(-0.05, 0.05)
+        
+        # Position Y : base + espacement de base pour chaque page + composante verticale du cercle, avant = y_base + i * 0.015 + rayon * math.sin(angle)
+        y = y_offset + y_base + rayon * (math.sin(angle) + 1)
+
+        # CALCUL DE LA POSITION EN Z pour le demi-cercle avec ondulation
+        # Base Z (position du bord de reliure aligné)
+        z_base = reliure_z - d/2
+        # Progression normalisée (0 à 1)
+        t = i / (nombre_pages - 1)
+        # Ondulation : bas rentré, milieu sorti davantage, haut rentré
+        ondulation = math.sin(t * math.pi) * 0.15
+        # Ajouter la composante horizontale du cercle + ondulation, avant = z_base + rayon * (1 - math.cos(angle)) + ondulation
+        z = z_base + rayon * math.cos(angle) + ondulation
+
+        coordonnees.append((w, d, x, y, z))
+    
+    print(len(coordonnees))
+    # Boucle pour créer chaque page
+    for i in range(nombre_pages):
+        (w, d, x, y, z) = coordonnees[i]
+        
+        # Créer un cube plat pour représenter une page
+        # [0] récupère le transform node
+        page = cmds.polyCube(name=f"Page_{i+1:03d}", w=w, h=epaisseur, d=d, sx=12, sy=12, sz=12)[0]
+        
+        # Déplacer la page à sa position finale
+        cmds.move(x, y, z, page)
+        
+        # Parenter la page au groupe
+        cmds.parent(page, pages_grp)
+        
+        # Ajouter la page à la liste
+        all_pages.append(page)
+
+    """ ANCIENNE BOUCLE DE CREATION DES PAGES AVEC CALCUL DE LA POSITION DIRECTEMENT DEDANS
     # Boucle pour créer chaque page
     for i in range(nombre_pages):
         # Variation aléatoire de la taille
@@ -78,7 +205,8 @@ def creer_pages(nombre_pages):
         
         # Ajouter la page à la liste
         all_pages.append(page)
-        
+        """
+
     # Création d'un groupe vide qui contiendra les bends des pages
     bend_grp = cmds.group(empty=True, name="Bend_GRP")
     
@@ -260,6 +388,74 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
             durations.append(max(1, int(round(dur))))
     print("Durations list:", durations)
 
+    # BOUCLE POUR ANIMER LA TRANSLATION DES PAGES TOUTES EN MEME TEMPS
+    mySpineH = epaisseur * nombre_pages # Calcul de la longueur de la reliure lorsqu'elle est ouverte
+    if (mySpineH < defaultSpineH): # Si elle est plus petite que la longueur de la reliure non déformée, elle prend la taille de la reliure non déformée
+        mySpineH = defaultSpineH
+
+    for i, ctrl in enumerate(all_controls):
+        # CALCUL DES POSITIONS DE FIN
+        
+        # Positions actuelles
+        y_start = cmds.getAttr(f"{ctrl}.translateY")
+        z_start = cmds.getAttr(f"{ctrl}.translateZ")
+
+        # Formules pour les positions finales droites
+        y_end = 0 # avant = y_base + (N * epaisseur / math.pi) * math.sin(n * math.pi / (N - 1))
+        z_end = (i+1) * mySpineH / nombre_pages # avant = z_start + (N * epaisseur / math.pi) * (math.cos(n * math.pi / (N - 1)) + 1)
+        
+        # ANIMATION DE TRANSLATION Y et Z (hauteur et profondeur)
+
+        cmds.setKeyframe(ctrl, attribute='translateY', value=y_start, time=frame_ferme)
+        cmds.setKeyframe(ctrl, attribute='translateY', value=y_end, time=frame_ouvre, inTangentType="linear")
+        
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_start, time=frame_ferme, outTangentType="linear")
+        cmds.setKeyframe(ctrl, attribute='translateZ', value=z_end, time=frame_ouvre)
+
+    # ANIMER LA ROTATION DE LA COUVERTURE AVEC LA TRANSLATION DES PAGES
+
+    # Clean les animations précédentes s'il y en a
+    cmds.cutKey(coverCtrl, attribute="rotateX")
+    cmds.rotate(0, 0, 0, coverCtrl, a=True)
+
+    cmds.cutKey(spineCtrl, attribute="rotateX")
+    cmds.rotate(0, 0, 0, spineCtrl, a=True)
+
+    # Animation
+
+    cmds.setKeyframe(coverCtrl, attribute='rotateX', value=0, time=frame_ferme)
+    cmds.setKeyframe(coverCtrl, attribute='rotateX', value=90, time=frame_ouvre)
+    
+    cmds.setKeyframe(spineCtrl, attribute='rotateX', value=0, time=frame_ferme)
+    cmds.setKeyframe(spineCtrl, attribute='rotateX', value=90, time=frame_ouvre)
+
+    # BOUCLE POUR ANIMER LA ROTATION DES PAGES LES UNES APRES LES AUTRES
+    
+    frame_actuelle = frame_debut
+    for i, ctrl in enumerate(controls_a_animer):
+        duree = durations[i] 
+
+        # ANIMATION DE ROTATION (axe X)
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=0, time=frame_actuelle)
+        
+        frame_fin = frame_actuelle + duree
+        
+        cmds.setKeyframe(ctrl, attribute='rotateX', value=180, time=frame_fin)
+        
+        cmds.keyTangent(ctrl, attribute='rotateX', time=(frame_actuelle, frame_fin), 
+                       inTangentType='spline', outTangentType='spline')
+        
+        # VARIATION ALÉATOIRE EN Z
+        variation_z = random.uniform(-1, 1)
+        
+        cmds.setKeyframe(ctrl, attribute='rotateZ', value=0, time=frame_actuelle)
+        cmds.setKeyframe(ctrl, attribute='rotateZ', value=variation_z, time=frame_actuelle + duree//2)
+        cmds.setKeyframe(ctrl, attribute='rotateZ', value=0, time=frame_fin)
+        
+        # CHEVAUCHEMENT (OVERLAP)
+        frame_actuelle += duree - 2
+        
+    """ ANCIENNE BOUCLE
     for i, ctrl in enumerate(controls_a_animer):
         duree = durations[i] 
         
@@ -310,6 +506,7 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
         
         # CHEVAUCHEMENT (OVERLAP)
         frame_actuelle += duree - 2
+    """
 
     frame_actuelle = frame_debut
 
@@ -756,6 +953,15 @@ nombre_pages_a_tourner = 25 - 1
 
 # Temps avant ouverture grimoire (modifiable)
 frame_debut = 35
+
+# Dernière frame à laquelle le livre est fermé et frame a laquelle il finit son ouverture (modifiable)
+frame_ferme = 20
+frame_ouvre = 37
+if not (frame_ouvre - frame_ferme > 4): # Sécurité si l'utilisateur n'a pas donné assez de temps
+    frame_ouvre = frame_ferme + 5
+
+# Angle d'ouverture finale du livre
+angleOpen = 
 
 # Pas moins de 4 sinon les pages n'ont pas assez de temps pour tourner (pas touche !)
 temps_minimum_animation_page = 4
