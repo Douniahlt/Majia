@@ -198,7 +198,31 @@ def creer_pages(nombre_pages):
 
     # Création d'un groupe vide qui contiendra les bends des pages
     bend_grp = cmds.group(empty=True, name="Bend_GRP")
+    all_bends = []
     
+    for i in range(nombre_pages):
+        # Récupérer les coordonnées de la page
+        (w, d, x, y, z) = coordonnees[i]
+
+        # On récupère la page numéro i
+        une_page = all_pages[i]
+
+        # On sélectionne la page sur laquelle ajouter un bend
+        cmds.select(f"{une_page}")
+        bend_result = cmds.nonLinear(n="bend_"+str(i+1), type='bend')
+        bend_deformer = bend_result[0] # On récupère le node avec les parametres du bend
+        bend_handle = bend_result[1]  # On récupère seulement le handle
+        # Parenter le bend au groupe
+        cmds.parent(bend_handle, bend_grp)
+
+        # Déplacer et rotater le bend sur le bord de la page
+        cmds.move(x, y, z+d, bend_handle)
+        cmds.rotate(90, 0, 90, bend_handle)
+        cmds.setAttr(bend_deformer + ".highBound", 0)
+
+        all_bends.append(bend_result)
+
+    """ ANCIENNE BOUCLE DE CREATION DES BENDS
     i = 1    
     for une_page in all_pages:
         
@@ -222,6 +246,7 @@ def creer_pages(nombre_pages):
         cmds.move(pivot_x, pivot_y, pivot_z, bend_handle)
         cmds.rotate(90, -90, -90, bend_handle)
         i = i + 1
+    """
 
     # CRÉATION DU MATÉRIAU BLANC POUR LES PAGES
     
@@ -240,7 +265,7 @@ def creer_pages(nombre_pages):
     # Assigner le matériau à toutes les pages
     cmds.sets(all_pages, e=True, forceElement=sg_page)
     
-    return all_pages
+    return all_pages, all_bends
 
 def rigger_pages():
     """
@@ -272,6 +297,7 @@ def rigger_pages():
     all_controls = []
     
     # Créer un contrôleur pour chaque page
+    i=1
     for page in all_pages:
         # CALCUL DE LA POSITION DU PIVOT
         
@@ -298,6 +324,8 @@ def rigger_pages():
         
         # Parenter la page au contrôleur
         cmds.parent(page, ctrl)
+        # Parenter le bend au controleur aussi
+        cmds.parent("bend_"+str(i)+"Handle", ctrl)
         
         # Restaurer la position/rotation dans l'espace monde
         cmds.xform(page, worldSpace=True, translation=page_pos)
@@ -309,6 +337,8 @@ def rigger_pages():
         # Organiser le contrôleur dans le groupe de rig
         cmds.parent(ctrl, rig_grp)
         all_controls.append(ctrl)
+
+        i+=1
     
     # Si `Pages_GRP` existe mais est vide, le supprimer
     if cmds.objExists("Pages_GRP"):
@@ -321,7 +351,7 @@ def rigger_pages():
 
     return all_controls
 
-def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acceleration=True):
+def animer_pages(all_bends, nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acceleration=True):
     """
     Anime les pages qui tournent via leur rig
     
@@ -347,9 +377,11 @@ def animer_pages(nombre_pages_a_tourner=10, frame_debut=1, duree_par_page=8, acc
     controls_a_animer = all_controls[(-nombre_pages_a_tourner-1):]
     controls_a_animer.reverse()
     
+    """
     all_bends = cmds.listRelatives("Bend_GRP", children=True, type='transform')
     if not all_bends:
         return
+    """
 
     bends_a_animer = all_bends[(-nombre_pages_a_tourner-1):]
     bends_a_animer.reverse()
@@ -989,9 +1021,9 @@ defaultSpineH = 1.33 # Largeur de la reliure lorsque le livre est ouvert et que 
 #coordonnee_z = 3.3
 
 # éxécution 
-creer_pages(nombre_pages)
+all_pages, all_bends = creer_pages(nombre_pages)
 rigger_pages()
-frame_fin_animation = animer_pages(nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
+frame_fin_animation = animer_pages(all_bends, nombre_pages_a_tourner, frame_debut, duree_normale, acceleration=False)
 
 # Les pages qui ne tournent pas restent en demi-cercle (pas d'animation)
 # animer_pages_qui_ne_se_tournent_pas(nombre_pages_a_tourner, frame_debut, Temps_total - frame_debut)
