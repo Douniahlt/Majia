@@ -1,20 +1,28 @@
-#! C:/Program Files/Nuke15.1v3/nuke-15.1.3.dll -nx
-version 15.1 v3
+#! F:/Applications/Nuke16.0v7/nuke-16.0.7.dll -nx
+#write_info Write1 file:"F:/Travail/MayaPythonMEL/PARTIEL/outNuke/test03.mp4" format:"1920 1080 1" chans:":rgba.red:rgba.green:rgba.blue:" framerange:"0 562" fps:"0" colorspace:"default" datatype:"unknown" transfer:"unknown" views:"main" colorManagement:"OCIO"
+version 16.0 v7
 define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
 <layout version="1.0">
-    <window x="0" y="0" w="1277" h="660" screen="0">
+    <window x="0" y="0" w="1919" h="1001" screen="0">
         <splitter orientation="1">
             <split size="40"/>
             <dock id="" hideTitles="1" activePageId="Toolbar.1">
                 <page id="Toolbar.1"/>
             </dock>
-            <split size="614" stretch="1"/>
+            <split size="1256" stretch="1"/>
             <splitter orientation="2">
-                <split size="404"/>
-                <dock id="" activePageId="Viewer.1">
-                    <page id="Viewer.1"/>
-                </dock>
-                <split size="214"/>
+                <split size="563"/>
+                <splitter orientation="1">
+                    <split size="626"/>
+                    <dock id="" activePageId="Viewer.1">
+                        <page id="Viewer.1"/>
+                    </dock>
+                    <split size="626"/>
+                    <dock id="" activePageId="Viewer.2">
+                        <page id="Viewer.2"/>
+                    </dock>
+                </splitter>
+                <split size="396"/>
                 <dock id="" activePageId="DAG.1" focus="true">
                     <page id="DAG.1"/>
                     <page id="Curve Editor.1"/>
@@ -33,8 +41,11 @@ define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
 }
 Root {
  inputs 0
- name C:/Users/matea/Desktop/compoTD01.nk
- frame 17
+ name F:/Travail/MayaPythonMEL/PARTIEL/Majia/Comp/compoTD01.nk
+ frame 261
+ first_frame 0
+ last_frame 562
+ lock_range true
  format "1920 1080 0 0 1920 1080 1 HD_1080"
  proxy_type scale
  proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
@@ -71,466 +82,27 @@ BackdropNode {
  bdwidth 150
  bdheight 415
 }
-BackdropNode {
- inputs 0
- name BackdropNode3
- tile_color 0xa8a89800
- label Papillons
- note_font_size 18
- xpos 1068
- ypos 447
- bdwidth 150
- bdheight 415
-}
-BackdropNode {
- inputs 0
- name BackdropNode4
- tile_color 0x68685800
- label Trainees
- note_font_size 18
- xpos 1218
- ypos 536
- bdwidth 150
- bdheight 415
-}
 Read {
  inputs 0
  file_type exr
- file C:/Users/matea/Desktop/RENDER01/beauty_pass/CAM03/Z/TP01_251007_renderReady_1.exr
+ file F:/Travail/MayaPythonMEL/PARTIEL/papillonsR01/pp_tech_pass/majia_lightRendu_scene.####.exr
  format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read3
- xpos 525
- ypos -368
-}
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/beauty_pass/CAM03/crypto_asset/TP01_251007_renderReady.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read4
- xpos 201
- ypos -391
-}
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/beauty_pass/CAM03/beauty/TP01_251007_renderReady_1.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
+ first 101
+ last 221
+ origfirst 101
+ origlast 221
  origset true
  name Read1
- xpos 74
- ypos -509
+ xpos 146
+ ypos -396
 }
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/beauty_pass/TP01_251008pm_renderReady.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read7
- xpos -74
- ypos -391
-}
-set N7ed1d400 [stack 0]
+set Nc6d07700 [stack 0]
 LayerContactSheet {
- name LayerContactSheet2
- xpos -258
- ypos -441
-}
-push $N7ed1d400
-Write {
- file C:/Users/matea/Desktop/avant.png
- file_type png
- transformType display
- checkHashOnRead false
- version 4
- ocioColorspace scene_linear
- display "sRGB - Display"
- view "ACES 1.0 - SDR Video"
- name Write2
- xpos -94
- ypos -536
-}
-push $N7ed1d400
-Cryptomatte {
- pickerAdd {0.005369186401 0.08590698242 0.09362792969 0 1912 242 1913 243}
- matteList "/ALL/GEO_GRP/arbres_grp/arbre17/arbres_etage03\n/ALL/GEO_GRP/arbres_grp/arbre17/arbres_etage02\n/ALL/GEO_GRP/arbres_grp/arbre17/arbres_etage01\n/ALL/GEO_GRP/arbres_grp/arbre10/arbres_etage03\n/ALL/GEO_GRP/arbres_grp/arbre10/arbres_etage02\n/ALL/GEO_GRP/arbres_grp/arbre10/arbres_etage01\n/ALL/GEO_GRP/arbres_grp/arbre11/arbres_etage01\n/ALL/GEO_GRP/arbres_grp/arbre10/arbres_tronc\n/ALL/GEO_GRP/arbres_grp/arbre11/arbres_tronc"
- lastSelectedCryptoLayerName crypto_asset
- name Cryptomatte1
- xpos 201
- ypos -241
-}
-set Nf8d67000 [stack 0]
-Cryptomatte {
- pickerAdd {0.008183220401 0.01501438767 0.01984081976 1 245 493 246 494}
- matteList "/ALL/GEO_GRP/parTerre_grp/*\n/ALL/GEO_GRP/souches_grp/souches_cylPPP07\n/ALL/GEO_GRP/souches_grp/souches_cylPPP02\n/ALL/GEO_GRP/souches_grp/souches_cylPPP08"
- lastSelectedCryptoLayerName crypto_asset
- name Cryptomatte2
+ showLayerNames true
+ name LayerContactSheet1
  xpos 146
- ypos -140
+ ypos -437
 }
-set Nd6ae9c00 [stack 0]
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/rim_pass/CAM03/beauty/TP01_251007_renderReady_1.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read5
- xpos -223
- ypos -271
-}
-set Nd6b26400 [stack 0]
-push $Nf8d67000
-push $Nd6b26400
-push $N7ed1d400
-Keymix {
- inputs 3
- channels rgb
- name Keymix1
- xpos -74
- ypos -241
-}
-Keymix {
- inputs 3
- channels rgb
- mix 0.28
- name Keymix2
- xpos -74
- ypos -140
-}
-set Nd6b27000 [stack 0]
-RotoPaint {
- inputs 0
- curves {{{v x3f99999a}
-  {f 0}
-  {n
-   {layer Root
-    {f 2097152}
-    {t x44700000 x44070000}
-    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
-    {curvegroup Ellipse1 512 bezier
-     {{cc
-       {f 8192}
-       {px x41980000
-        {xc3c2ae2c 0}
-        {x446d0cd0 xc35d9994}
-        {x43c2ae2c 0}
-        {xc0cdee00 xc367deca}
-        {x44d70ccc x43ad999c}
-        {x40a66600 x433bfffc}
-        {x43a17ffc x3f999600}
-        {x4470a669 x443c3335}
-        {xc3a37fe0 xbf93f600}
-        {x407ffc80 x43379994}
-        {x439b333b x43a40003}
-        {xc0a1ac80 xc367e790}}}
-      {cc
-       {f 8192}
-       {px x41980000
-        {xc3c2ae2c 0}
-        {0 0}
-        {x43c2ae2c 0}
-        {x41e4a600 xc3663130}
-        {x44076494 xc21539a8}
-        {xc27fe2c0 x440106cc}
-        {x4435f4a1 xc10c1d40}
-        {x40f71200 x43b6cc3c}
-        {xc4124374 x40b15a80}
-        {xc115b9e0 x43d6537e}
-        {xc40242b6 xbf270200}
-        {x40a2cae0 xc367e751}}}}
-     {tx x41980000 x4470c000 x431c0000}
-     {a osw x41200000 osf 0 str 1 spx x44700000 spy x44070000 sb 1 ltn x41980000 ltm x41980000 tt x40e00000}}}}}}
- toolbox {selectAll {
-  { selectAll str 1 ssx 1 ssy 1 sf 1 }
-  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
-  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
-} }
- toolbar_brush_hardness 0.200000003
- toolbar_source_transform_scale {1 1}
- toolbar_source_transform_center {960 540}
- colorOverlay {0 0 0 0}
- lifetime_type "all frames"
- lifetime_start 19
- lifetime_end 19
- motionblur_shutter_offset_type centred
- source_black_outside true
- name RotoPaint1
- xpos 1040
- ypos 198
-}
-Blur {
- size 500
- name Blur1
- xpos 1040
- ypos 254
-}
-Invert {
- name Invert2
- xpos 1040
- ypos 335
-}
-Read {
- inputs 0
- file_type psd
- file C:/Users/matea/Desktop/mattePaint.psd
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read6
- xpos 732
- ypos -276
-}
-Dot {
- name Dot5
- xpos 766
- ypos -59
-}
-set Nf8d2b000 [stack 0]
-Dot {
- name Dot7
- xpos 916
- ypos -59
-}
-set Nf8d2b400 [stack 0]
-add_layer {Etoiles Etoiles.red Etoiles.green Etoiles.blue Etoiles.alpha}
-Shuffle {
- in Etoiles
- name Shuffle3
- label Etoiles
- xpos 882
- ypos 7
-}
-Crop {
- box {112 1070 1900 495}
- name Crop2
- xpos 882
- ypos 77
-}
-Premult {
- name Premult2
- xpos 882
- ypos 126
-}
-ChannelMerge {
- inputs 2
- operation multiply
- name ChannelMerge1
- xpos 882
- ypos 329
-}
-Premult {
- name Premult5
- xpos 882
- ypos 407
-}
-push $Nf8d2b000
-add_layer {Ciel Ciel.red Ciel.green Ciel.blue Ciel.alpha}
-Shuffle {
- in Ciel
- name Shuffle2
- label Ciel
- xpos 732
- ypos 7
-}
-Crop {
- box {0 1080 1920 0}
- name Crop1
- xpos 732
- ypos 77
-}
-Grade {
- white {1.420000076 1.820000052 2.220000029 1.820000052}
- name Grade7
- xpos 732
- ypos 334
-}
-Merge2 {
- inputs 2
- mix 0.62
- name Merge4
- xpos 732
- ypos 407
-}
-set Nd6aab800 [stack 0]
-Glow2 {
- tolerance 0.025
- brightness 5
- effect_only true
- size 25.5
- name Glow4
- xpos 474
- ypos 336
-}
-push $Nd6aab800
-Glow2 {
- tolerance 0.025
- brightness 5
- effect_only true
- size 16
- name Glow3
- xpos 598
- ypos 336
-}
-push $Nd6aab800
-Merge2 {
- inputs 2
- operation plus
- mix 0.135
- name Merge5
- xpos 598
- ypos 407
-}
-Merge2 {
- inputs 2
- operation plus
- mix 0.315
- name Merge6
- xpos 474
- ypos 407
-}
-push $Nd6ae9c00
-Cryptomatte {
- pickerAdd {0.1592255235 0.04760837555 0.1904335022 0 560 258 561 259}
- matteList "/ALL/GEO_GRP/arbres_grp/arbre12/arbres_etage01\n/ALL/GEO_GRP/arbres_grp/arbre12/arbres_etage02\n/ALL/GEO_GRP/arbres_grp/arbre12/arbres_etage03\n/ALL/GEO_GRP/arbres_grp/arbre12/arbres_tronc"
- lastSelectedCryptoLayerName crypto_asset
- name Cryptomatte4
- xpos 146
- ypos 165
-}
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/AO_pass/CAM03/beauty/TP01_251007_renderReady_1.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read8
- xpos 422
- ypos 44
-}
-Invert {
- name Invert4
- xpos 284
- ypos 74
-}
-Grade {
- blackpoint 0.26
- whitepoint 2.44
- name Grade6
- xpos 174
- ypos 80
-}
-Shuffle2 {
- fromInput1 {{0} B}
- fromInput2 {{0} B}
- mappings "4 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.red 0 0 rgba.alpha 0 3"
- name Shuffle7
- xpos 36
- ypos 80
-}
-ChannelMerge {
- inputs 2
- operation multiply
- name ChannelMerge5
- xpos 36
- ypos 153
-}
-Read {
- inputs 0
- file_type exr
- file C:/Users/matea/Desktop/RENDER01/beauty_pass/CAM03/Z/TP01_251007_renderReady.exr
- format "1920 1080 0 0 1920 1080 1 HD_1080"
- origset true
- name Read2
- xpos 527
- ypos -224
-}
-Grade {
- blackpoint {33.08840561 33.08840561 33.08840561 0}
- whitepoint {0.7852671146 0.7852671146 0.7852671146 0}
- name Grade1
- xpos 376
- ypos -188
-}
-Invert {
- name Invert1
- xpos 376
- ypos -126
-}
-Grade {
- multiply 0.9
- gamma 0.6
- name Grade2
- xpos 376
- ypos -42
-}
-Constant {
- inputs 0
- channels rgb
- color {0.02700078115 0.03627664223 0.02526107989 0.9999998808}
- name Constant1
- xpos -231
- ypos -66
-}
-push $Nd6b27000
-Keymix {
- inputs 3
- channels rgb
- maskChannel rgba.red
- mix 0.25
- name Keymix4
- xpos -74
- ypos -42
-}
-set Nd6b27400 [stack 0]
-Grade {
- white 0.035
- name Grade5
- xpos -202
- ypos 165
-}
-push $Nd6b27400
-Keymix {
- inputs 3
- name Keymix7
- selected true
- xpos -74
- ypos 159
-}
-Merge2 {
- inputs 2
- operation under
- name Merge1
- xpos -74
- ypos 407
-}
-ZDefocus2 {
- math depth
- center 8.614304543
- focal_point {542 375.7999878}
- dof 0.5
- size 9.5
- max_size 11
- name ZDefocus1
- xpos -74
- ypos 640
-}
-set Nd6ba4800 [stack 0]
 RotoPaint {
  inputs 0
  curves {{{v x3f99999a}
@@ -581,6 +153,7 @@ RotoPaint {
   { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
   { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
   { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createOpenSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
   { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
   { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
   { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
@@ -602,177 +175,483 @@ RotoPaint {
  source_black_outside true
  name RotoPaint2
  xpos 82
- ypos 1483
+ ypos 1135
 }
 Invert {
  name Invert5
  xpos 82
- ypos 1533
+ ypos 1185
 }
 Blur {
  size 400
  name Blur2
  xpos 82
- ypos 1598
+ ypos 1250
 }
-push $Nf8d67000
-Shuffle2 {
- fromInput1 {{0} B}
- fromInput2 {{1} B A}
- in2 depth
- out2 depth
- mappings "5 rgba.alpha 0 3 rgba.alpha 0 3 rgba.alpha 0 3 rgba.red 0 0 rgba.alpha 0 3 rgba.green 0 1 rgba.alpha 0 3 rgba.blue 0 2 depth.Z 1 0 depth.Z 1 0"
- name Shuffle10
- xpos -326
- ypos 568
+push $Nc6d07700
+push $Nc6d07700
+Cryptomatte {
+ pickerAdd {0.005369186401 0.08590698242 0.09362792969 0 1912 242 1913 243}
+ matteList "*/arbre17/arbres_etage03*\n*/arbre17/arbres_etage02*\n*/arbre17/arbres_etage01*\n*/arbre10/arbres_etage03*\n*/arbre10/arbres_etage02*\n*/arbre10/arbres_etage01*\n*/arbre11/arbres_etage01*\n*/arbre10/arbres_tronc*\n*/arbre11/arbres_tronc*"
+ lastSelectedCryptoLayerName crypto_asset
+ name Cryptomatte1
+ xpos 146
+ ypos -241
 }
-ZDefocus2 {
- math depth
- center 8.614304543
- focal_point {542 375.7999878}
- dof 0.5
- size 9.5
- max_size 11
- name ZDefocus2
- xpos -326
- ypos 644
+set Nc7fcfe00 [stack 0]
+Cryptomatte {
+ pickerAdd {0.008183220401 0.01501438767 0.01984081976 1 245 493 246 494}
+ matteList "*/parTerre_grp/*\n*/souches_grp/souches_cylPPP07*\n*/souches_grp/souches_cylPPP02*\n*/souches_grp/souches_cylPPP08*"
+ lastSelectedCryptoLayerName crypto_asset
+ name Cryptomatte2
+ xpos 146
+ ypos -140
+}
+set Nc7fd0d00 [stack 0]
+Cryptomatte {
+ pickerAdd {0.1592255235 0.04760837555 0.1904335022 0 560 258 561 259}
+ matteList "*/arbre12/arbres_etage01*\n*/arbre12/arbres_etage02*\n*/arbre12/arbres_etage03*\n*/arbre12/arbres_tronc*"
+ lastSelectedCryptoLayerName crypto_asset
+ name Cryptomatte4
+ xpos 146
+ ypos 165
+}
+set N9aaf0800 [stack 0]
+Cryptomatte {
+ pickerAdd {0.09354827553 0.1473829299 0.08351066709 0 1274 926 1275 927}
+ matteList /ALL/GEO_GRP/pp_papython_grp/*
+ lastSelectedCryptoLayerName crypto_asset
+ name Cryptomatte3
+ xpos 146
+ ypos 565
+}
+Read {
+ inputs 0
+ file_type exr
+ file F:/Travail/MayaPythonMEL/PARTIEL/papillonsR01/pp_papythons_beauty_pass/majia_lightRendu_scene.####.exr
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ first 101
+ last 212
+ origfirst 101
+ origlast 212
+ origset true
+ name Read2
+ xpos -246
+ ypos 529
+}
+RotoPaint {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 2097152}
+    {t x44700000 x44070000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
+    {curvegroup Ellipse1 512 bezier
+     {{cc
+       {f 8192}
+       {px x41980000
+        {xc3c2ae2c 0}
+        {x446d0cd0 xc35d9994}
+        {x43c2ae2c 0}
+        {xc0cdee00 xc367deca}
+        {x44d70ccc x43ad999c}
+        {x40a66600 x433bfffc}
+        {x43a17ffc x3f999600}
+        {x4470a669 x443c3335}
+        {xc3a37fe0 xbf93f600}
+        {x407ffc80 x43379994}
+        {x439b333b x43a40003}
+        {xc0a1ac80 xc367e790}}}
+      {cc
+       {f 8192}
+       {px x41980000
+        {xc3c2ae2c 0}
+        {0 0}
+        {x43c2ae2c 0}
+        {x41e4a600 xc3663130}
+        {x44076494 xc21539a8}
+        {xc27fe2c0 x440106cc}
+        {x4435f4a1 xc10c1d40}
+        {x40f71200 x43b6cc3c}
+        {xc4124374 x40b15a80}
+        {xc115b9e0 x43d6537e}
+        {xc40242b6 xbf270200}
+        {x40a2cae0 xc367e751}}}}
+     {tx x41980000 x4470c000 x431c0000}
+     {a osw x41200000 osf 0 str 1 spx x44700000 spy x44070000 sb 1 ltn x41980000 ltm x41980000 tt x40e00000}}}}}}
+ toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createOpenSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {960 540}
+ colorOverlay {0 0 0 0}
+ lifetime_type "all frames"
+ lifetime_start 19
+ lifetime_end 19
+ motionblur_shutter_offset_type centred
+ source_black_outside true
+ name RotoPaint1
+ xpos 1040
+ ypos 198
+}
+Blur {
+ size 500
+ name Blur1
+ xpos 1040
+ ypos 254
 }
 Invert {
- name Invert6
- xpos -326
- ypos 722
+ name Invert2
+ xpos 1040
+ ypos 335
 }
-set N40446400 [stack 0]
-push $Nf8d2b400
+Read {
+ inputs 0
+ file_type psd
+ file F:/Travail/MayaPythonMEL/PARTIEL/Majia/Comp/mattePaint.psd
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ origset true
+ name Read6
+ xpos 732
+ ypos -276
+}
 Dot {
- name Dot8
- xpos 1132
- ypos 526
+ name Dot5
+ xpos 766
+ ypos -59
 }
-set Nf8d2b800 [stack 0]
+set Nc8018c00 [stack 0]
 Dot {
- name Dot9
- xpos 1282
- ypos 615
+ name Dot7
+ xpos 916
+ ypos -59
 }
-add_layer {Trainees Trainees.red Trainees.green Trainees.blue Trainees.alpha}
+add_layer {Etoiles Etoiles.red Etoiles.green Etoiles.blue Etoiles.alpha}
 Shuffle {
- in Trainees
- name Shuffle5
- label Trainees
- xpos 1248
- ypos 681
+ in Etoiles
+ name Shuffle3
+ label Etoiles
+ xpos 882
+ ypos 7
 }
 Crop {
- box {228 846 807 423}
- name Crop4
- xpos 1248
- ypos 751
+ box {112 1070 1900 495}
+ name Crop2
+ xpos 882
+ ypos 77
 }
 Premult {
- name Premult4
- xpos 1248
- ypos 821
+ name Premult2
+ xpos 882
+ ypos 126
 }
-set Nf8d66800 [stack 0]
-Grade {
- white 1.52
- name Grade9
- xpos 507
- ypos 1159
+ChannelMerge {
+ inputs 2
+ operation multiply
+ name ChannelMerge1
+ xpos 882
+ ypos 329
 }
-push $Nf8d2b800
-add_layer {Papillons Papillons.red Papillons.green Papillons.blue Papillons.alpha}
+Premult {
+ name Premult5
+ xpos 882
+ ypos 407
+}
+push $Nc8018c00
+add_layer {Ciel Ciel.red Ciel.green Ciel.blue Ciel.alpha}
 Shuffle {
- in Papillons
- name Shuffle4
- label Papillons
- xpos 1098
- ypos 592
+ in Ciel
+ name Shuffle2
+ label Ciel
+ xpos 732
+ ypos 7
 }
 Crop {
- box {148 878 859 318}
- name Crop3
- xpos 1098
- ypos 662
+ box {0 1080 1920 0}
+ name Crop1
+ xpos 732
+ ypos 77
 }
-Premult {
- name Premult3
- xpos 1098
- ypos 732
-}
-set Nf8dac800 [stack 0]
 Grade {
- white 1.74
- name Grade4
- xpos 368
- ypos 1159
+ white {1.420000076 1.820000052 2.220000029 1.820000052}
+ name Grade7
+ xpos 732
+ ypos 334
 }
 Merge2 {
  inputs 2
- name Merge7
- xpos 368
- ypos 1274
+ mix 0.62
+ name Merge4
+ xpos 732
+ ypos 407
 }
-set N3bd28000 [stack 0]
+set N9aaee500 [stack 0]
 Glow2 {
- name Glow6
- xpos 81
- ypos 1344
+ tolerance 0.025
+ brightness 5
+ effect_only true
+ size 25.5
+ name Glow4
+ xpos 474
+ ypos 336
 }
-push $N40446400
-push $N3bd28000
+push $N9aaee500
 Glow2 {
- size 55.5
- name Glow5
- xpos 87
- ypos 1274
+ tolerance 0.025
+ brightness 5
+ effect_only true
+ size 16
+ name Glow3
+ xpos 598
+ ypos 336
 }
-push $Nf8d66800
-push $N40446400
+push $N9aaee500
+Merge2 {
+ inputs 2
+ operation plus
+ mix 0.135
+ name Merge5
+ xpos 598
+ ypos 407
+}
+Merge2 {
+ inputs 2
+ operation plus
+ mix 0.315
+ name Merge6
+ xpos 474
+ ypos 407
+}
+push $N9aaf0800
+Read {
+ inputs 0
+ file_type exr
+ file C:/Users/matea/Desktop/RENDER01/AO_pass/CAM03/beauty/TP01_251007_renderReady_1.exr
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ origset true
+ name Read8
+ xpos 422
+ ypos 50
+}
+Invert {
+ name Invert4
+ xpos 284
+ ypos 74
+}
+Grade {
+ blackpoint 0.26
+ whitepoint 2.44
+ name Grade6
+ xpos 174
+ ypos 80
+}
+Shuffle2 {
+ fromInput1 {
+  {0}
+  B
+ }
+ fromInput2 {
+  {0}
+  B
+ }
+ mappings "4 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.red 0 0 rgba.alpha 0 3"
+ name Shuffle7
+ xpos 36
+ ypos 80
+}
 ChannelMerge {
  inputs 2
  operation multiply
- name ChannelMerge3
- xpos -326
- ypos 906
+ name ChannelMerge5
+ xpos 36
+ ypos 153
 }
-push $Nf8d66800
-push $Nf8dac800
-push $N40446400
-ChannelMerge {
- inputs 2
- operation multiply
- name ChannelMerge2
- xpos -249
- ypos 817
+push $Nc6d07700
+Shuffle2 {
+ fromInput1 {
+  {0}
+  B
+ }
+ in1 depth
+ fromInput2 {
+  {0}
+  B
+ }
+ mappings "4 depth.Z 0 0 rgba.red 0 0 depth.Z 0 0 rgba.green 0 1 depth.Z 0 0 rgba.blue 0 2 depth.Z 0 0 rgba.alpha 0 3"
+ name Shuffle1
+ xpos 376
+ ypos -251
 }
-push $Nf8dac800
-push $Nd6ba4800
+Grade {
+ blackpoint {33.08840561 33.08840561 33.08840561 0}
+ whitepoint {0.7852671146 0.7852671146 0.7852671146 0}
+ name Grade1
+ xpos 376
+ ypos -188
+}
+Invert {
+ name Invert1
+ xpos 376
+ ypos -126
+}
+Grade {
+ multiply 0.9
+ gamma 0.6
+ name Grade2
+ xpos 376
+ ypos -42
+}
+Constant {
+ inputs 0
+ channels rgb
+ color {0.02700078115 0.03627664223 0.02526107989 0.9999998808}
+ name Constant1
+ xpos -232
+ ypos -66
+}
+push $Nc7fd0d00
+Read {
+ inputs 0
+ file_type exr
+ file C:/Users/matea/Desktop/RENDER01/rim_pass/CAM03/beauty/TP01_251007_renderReady_1.exr
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ origset true
+ name Read5
+ xpos -223
+ ypos -271
+}
+set Nc8042000 [stack 0]
+push $Nc7fcfe00
+push $Nc8042000
+Read {
+ inputs 0
+ file_type exr
+ file F:/Travail/MayaPythonMEL/PARTIEL/papillonsR01/pp_bg_beauty_pass/majia_lightRendu_scene.####.exr
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ first 101
+ last 221
+ origfirst 101
+ origlast 221
+ origset true
+ name Read7
+ xpos -74
+ ypos -392
+}
 Keymix {
  inputs 3
  channels rgb
- name Keymix3
+ name Keymix1
  xpos -74
- ypos 829
+ ypos -241
+ disable true
 }
 Keymix {
  inputs 3
- name Keymix6
+ channels rgb
+ mix 0.28
+ name Keymix2
  xpos -74
- ypos 912
+ ypos -140
+ disable true
 }
-set Nd6c34000 [stack 0]
+set Nc8042a00 [stack 0]
+Keymix {
+ inputs 3
+ channels rgb
+ maskChannel rgba.red
+ mix 0.25
+ name Keymix4
+ xpos -74
+ ypos -42
+}
+set N9ab8e300 [stack 0]
+Grade {
+ white 0.035
+ name Grade5
+ xpos -202
+ ypos 165
+}
+push $N9ab8e300
+Keymix {
+ inputs 3
+ name Keymix7
+ xpos -74
+ ypos 159
+ disable true
+}
+Merge2 {
+ inputs 2
+ operation under
+ name Merge1
+ xpos -74
+ ypos 407
+}
+Keymix {
+ inputs 3
+ name Keymix3
+ xpos -74
+ ypos 559
+}
+Shuffle2 {
+ inputs 2
+ fromInput1 {
+  {0}
+  B
+  A
+ }
+ fromInput2 {
+  {1}
+  B
+  A
+ }
+ in2 depth
+ out2 depth
+ mappings "5 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3 depth.Z 1 0 depth.Z 1 0"
+ name Shuffle6
+ xpos -74
+ ypos 743
+}
+ZDefocus2 {
+ math depth
+ center 11.37559605
+ focal_point {544 392}
+ dof 0.5
+ size 16.5
+ max_size 11
+ name ZDefocus1
+ xpos -74
+ ypos 821
+}
+set N9aba5e00 [stack 0]
 Dot {
  name Dot4
- xpos 215
- ypos 1102
+ xpos -296
+ ypos 952
 }
-set Nd6ba5000 [stack 0]
+set N9ae14000 [stack 0]
 Dot {
  name Dot3
- xpos 215
- ypos 1175
+ xpos -296
+ ypos 1025
 }
 Glow2 {
  tolerance 0.05
@@ -780,27 +659,27 @@ Glow2 {
  effect_only true
  size 27
  name Glow2
- xpos 75
- ypos 1172
+ xpos -228
+ ypos 1022
 }
-push $Nd6ba5000
+push $N9ae14000
 Glow2 {
  tolerance 0.015
  saturation 0.83
  effect_only true
  size 44
  name Glow1
- xpos 75
- ypos 1099
+ xpos -228
+ ypos 949
 }
-push $Nd6c34000
+push $N9aba5e00
 Merge2 {
  inputs 2
  operation plus
  mix 0.07
  name Merge2
  xpos -74
- ypos 1099
+ ypos 949
 }
 Merge2 {
  inputs 2
@@ -808,23 +687,7 @@ Merge2 {
  mix 0.095
  name Merge3
  xpos -74
- ypos 1172
-}
-Merge2 {
- inputs 2+1
- operation plus
- mix 0.375
- name Merge8
- xpos -74
- ypos 1274
-}
-Merge2 {
- inputs 2+1
- operation plus
- mix 0.135
- name Merge9
- xpos -74
- ypos 1344
+ ypos 1022
 }
 ColorCorrect {
  shadows.saturation 1.14
@@ -837,16 +700,16 @@ ColorCorrect {
    highlight {curve x0.08186118305 0 s0 x0.1373816878 1 s0}}
  name ColorCorrect1
  xpos -74
- ypos 1455
+ ypos 1107
 }
-set Nd6be0800 [stack 0]
+set N9ae1a300 [stack 0]
 Grade {
  white 0.43
  name Grade8
  xpos -215
- ypos 1604
+ ypos 1107
 }
-push $Nd6be0800
+push $N9ae1a300
 Keymix {
  inputs 3
  channels rgb
@@ -854,30 +717,517 @@ Keymix {
  mix 0.66
  name Keymix8
  xpos -74
- ypos 1604
+ ypos 1256
 }
-Write {
- file C:/Users/matea/Desktop/test04.png
- file_type png
- transformType display
- checkHashOnRead false
- version 4
- ocioColorspace scene_linear
- display "sRGB - Display"
- view "ACES 1.0 - SDR Video"
- name Write1
+Retime {
+ input.first 101
+ input.last 221
+ output.first 442
+ output.first_lock true
+ output.last 562
+ time ""
+ name Retime1
  xpos -74
- ypos 1702
+ ypos 1411
 }
+set N9372500 [stack 0]
 Viewer {
+ frame 261
+ frame_range 0-562
+ viewerProcess "ACES 1.0 - SDR Video (sRGB - Display)"
+ monitorOutNDISenderName "Nuke - compoTD01 - Viewer2"
+ name Viewer2
+ xpos 28
+ ypos 1458
+}
+Read {
+ inputs 0
+ file_type exr
+ file "F:/Travail/MayaPythonMEL/PARTIEL/papillonsR01/RENDU GRIMOIRE EXR/majia_lightRendu_FINAL.####.exr"
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ first 0
+ last 441
+ origfirst 0
+ origlast 441
+ origset true
+ name Read3
+ xpos -989
+ ypos 5
+}
+set N9372f00 [stack 0]
+LayerContactSheet {
+ name LayerContactSheet2
+ xpos -1020
+ ypos -103
+}
+push $N9372f00
+Cryptomatte {
+ pickerAdd {0 0 0 0 0 0 0 0}
+ matteList "*\n\t"
+ lastSelectedCryptoLayerName crypto_material
+ name Cryptomatte5
+ xpos -683
+ ypos 41
+}
+set Nc49c3700 [stack 0]
+Invert {
+ name Invert3
+ xpos -822
+ ypos 291
+}
+set Nc49c2800 [stack 0]
+push $Nc8042a00
+push $N9aba5e00
+push $Nc49c2800
+push $Nc49c3700
+Cryptomatte {
+ pickerAdd {0.1532245874 0.201593399 0.05637359619 0 1132 580 1133 581}
+ matteList vertLivre_mat
+ lastSelectedCryptoLayerName crypto_material
+ name Cryptomatte6
+ xpos -683
+ ypos 448
+}
+set N887b3700 [stack 0]
+Cryptomatte {
+ pickerAdd {0.02436453104 0.1398324966 0.05932998657 0 1014 490 1015 491}
+ matteList or_mat
+ lastSelectedCryptoLayerName crypto_material
+ name Cryptomatte7
+ xpos -683
+ ypos 592
+}
+set Nac0ff900 [stack 0]
+Cryptomatte {
+ pickerAdd {0.2171433568 0.2242937088 0.1471748352 0 480 456 481 457}
+ matteList "pageMatea\npage02\npage03\npage01"
+ lastSelectedCryptoLayerName crypto_material
+ name Cryptomatte8
+ xpos -683
+ ypos 708
+}
+push $Nac0ff900
+push $N887b3700
+push $Nc49c2800
+RotoPaint {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 2097152}
+    {t x44700000 x44070000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
+    {curvegroup Ellipse1 512 bezier
+     {{cc
+       {f 8192}
+       {px x43210000
+        {xc3a8dd14 xc1f41b3a}
+        {x4478517a x42d32e2c}
+        {x43a8dd14 x41f41b40}
+        {x419bd8c0 xc3579e0c}
+        {x44c4304c x4409cff4}
+        {xc19bd8c0 x43579e0c}
+        {x43a8dd18 x41f41b40}
+        {x4466ae84 x445d9a3a}
+        {xc3a8dd14 xc1f41b40}
+        {xc19bd8b0 x43579e0e}
+        {x43ad3ed0 x43dc601a}
+        {x419bd8b0 xc3579e0d}}}     idem}
+     {tx x43210000 x446f8000 x43f20000}
+     {a osw x41200000 osf 0 str 1 spx x44700000 spy x44070000 sb 1 ltn x43210000 ltm x43210000 tt x40e00000}}}}}}
+ toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createOpenSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {960 540}
+ colorOverlay {0 0 0 0}
+ lifetime_type "all frames"
+ lifetime_start 161
+ lifetime_end 161
+ motionblur_shutter_offset_type centred
+ source_black_outside true
+ name RotoPaint3
+ xpos -1134
+ ypos 128
+}
+Blur {
+ size 500
+ name Blur3
+ xpos -1134
+ ypos 214
+}
+push $N9372f00
+Dot {
+ name Dot2
+ xpos -1229
+ ypos 44
+}
+ColorCorrect {
+ saturation 0.11
+ gain 1.6
+ name ColorCorrect2
+ xpos -1263
+ ypos 141
+}
+set N3ac92f00 [stack 0]
+ColorCorrect {
+ gain 2.55
+ offset 0.055
+ name ColorCorrect3
+ xpos -1387
+ ypos 210
+}
+push $N3ac92f00
+Keymix {
  inputs 3
- frame_range 1-100
- colour_sample_bbox {-0.671875 -0.05312500149 -0.6708333492 -0.05208333209}
- samplepoints {{-0.671875 -0.05416666716}
-   }
+ channels rgb
+ name Keymix6
+ xpos -1263
+ ypos 210
+}
+Dot {
+ name Dot1
+ xpos -1229
+ ypos 300
+}
+push $N9372f00
+Keymix {
+ inputs 3
+ channels rgb
+ name Keymix5
+ xpos -989
+ ypos 297
+}
+set N3ac92a00 [stack 0]
+ColorCorrect {
+ gain {0.03000001051 0.6800000072 1.329999924 1}
+ name ColorCorrect4
+ xpos -1164
+ ypos 448
+}
+push $N3ac92a00
+Keymix {
+ inputs 3
+ channels rgb
+ name Keymix9
+ xpos -989
+ ypos 448
+}
+set N88dfb200 [stack 0]
+ColorCorrect {
+ gain {1.291666627 0.866666615 0.8416666389 1}
+ name ColorCorrect5
+ xpos -1164
+ ypos 592
+}
+push $N88dfb200
+Keymix {
+ inputs 3
+ channels rgb
+ name Keymix10
+ xpos -989
+ ypos 592
+}
+set Nfb4b9e00 [stack 0]
+ColorCorrect {
+ saturation 0.84
+ gain {0.5666666627 0.5766666532 0.5666666627 0.5699999928}
+ name ColorCorrect7
+ xpos -1169
+ ypos 708
+}
+push $Nfb4b9e00
+Keymix {
+ inputs 3
+ channels rgb
+ name Keymix13
+ xpos -989
+ ypos 708
+}
+Denoise2 {
+ amount 0.75
+ analysisRegion {802 452 902 552}
+ analysisFrame 46
+ needsAnalyzing false
+ profileCurve {profile {curve 0 x0.125 0 0 0 0 0 0 0 0}}
+ serializeKnob "1.940786541e-01 4.307521284e-01 5.633007884e-01
+8.856724016e-03 3.111989936e-03 2.674299991e-03
+8.856724016e-03 3.111989936e-03 2.674299991e-03
+7.662737742e-03 2.728548367e-03 2.350715455e-03
+0.000000000e+00 0.000000000e+00 0.000000000e+00
+2.989511006e-03 1.008816296e-03 8.671614341e-04
+2.989511006e-03 1.008816296e-03 8.671614341e-04
+1.995930681e-03 6.934615085e-04 5.931897904e-04
+0.000000000e+00 0.000000000e+00 0.000000000e+00
+1.418802654e-03 4.511218867e-04 3.886452469e-04
+1.418802654e-03 4.511218867e-04 3.886452469e-04
+4.663104191e-04 1.471938012e-04 1.314369292e-04
+0.000000000e+00 0.000000000e+00 0.000000000e+00
+5.146589247e-04 1.782837207e-04 1.398875465e-04
+5.146589247e-04 1.782837207e-04 1.398875465e-04
+1.242683911e-08 2.209215921e-08 3.313823882e-08
+0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 
+9978077781119519015"
+ name Denoise1
+ xpos -989
+ ypos 1026
+}
+set Nac101200 [stack 0]
+Grade {
+ white 0
+ name Grade4
+ xpos -1367
+ ypos 1122
+}
+push $Nac101200
+Keymix {
+ inputs 3
+ name Keymix12
+ xpos -1245
+ ypos 1116
+}
+Dot {
+ name Dot6
+ xpos -1211
+ ypos 1209
+}
+set Nf6336400 [stack 0]
+Dot {
+ name Dot8
+ xpos -1211
+ ypos 1282
+}
+Glow2 {
+ tolerance 0.105
+ brightness 1.92
+ effect_only true
+ size 27
+ name Glow5
+ xpos -1143
+ ypos 1279
+}
+push $Nf6336400
+Glow2 {
+ tolerance 0.085
+ saturation 0.83
+ effect_only true
+ size 44
+ name Glow6
+ xpos -1143
+ ypos 1206
+}
+push $Nac101200
+Merge2 {
+ inputs 2
+ operation plus
+ mix 0.025
+ name Merge7
+ xpos -989
+ ypos 1206
+}
+Merge2 {
+ inputs 2
+ operation plus
+ mix 0.04
+ name Merge8
+ xpos -989
+ ypos 1279
+}
+set Nac0ffe00 [stack 0]
+Viewer {
+ inputs 4
+ frame 261
+ frame_range 0-562
+ frame_range_lock true
+ colour_sample_bbox {-0.5 -0.08749999851 -0.4989583194 -0.08645833284}
+ samplepoints {
+  {-0.5 -0.08749999851}
+ }
  viewerProcess "ACES 1.0 - SDR Video (sRGB - Display)"
  monitorOutNDISenderName "Nuke - compoTD01 - Viewer1"
  name Viewer1
  xpos -822
  ypos -140
+}
+push $N9372500
+RotoPaint {
+ inputs 0
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 2097152}
+    {t x44700000 x44070000}
+    {a pt1x 0 pt1y 0 pt2x 0 pt2y 0 pt3x 0 pt3y 0 pt4x 0 pt4y 0 ptex00 0 ptex01 0 ptex02 0 ptex03 0 ptex10 0 ptex11 0 ptex12 0 ptex13 0 ptex20 0 ptex21 0 ptex22 0 ptex23 0 ptex30 0 ptex31 0 ptex32 0 ptex33 0 ptof1x 0 ptof1y 0 ptof2x 0 ptof2y 0 ptof3x 0 ptof3y 0 ptof4x 0 ptof4y 0 pterr 0 ptrefset 0 ptmot x40800000 ptref 0}
+    {curvegroup Ellipse1 512 bezier
+     {{cc
+       {f 8192}
+       {px x41880000
+        {xc405279f 0}
+        {x44652665 xc1f703c8}
+        {x4405279d 0}
+        {0 xc38c5b57}
+        {x44eb1fbe x43eeb337}
+        {0 x438c5b59}
+        {x4405279d 0}
+        {x44652665 x44766b56}
+        {xc405279f 0}
+        {0 x438c5b59}
+        {xc23f2b30 x43eeb337}
+        {0 xc38c5b57}}}
+      {cc
+       {f 8192}
+       {px x41880000
+        {xc405279f 0}
+        {0 0}
+        {x4405279d 0}
+        {0 xc38c5b57}
+        {0 0}
+        {0 x438c5b59}
+        {x4405279d 0}
+        {0 0}
+        {xc405279f 0}
+        {0 x438c5b59}
+        {0 0}
+        {0 xc38c5b57}}}}
+     {tx x41880000 x44764000 x43f68000}
+     {a osw x41200000 osf 0 str 1 spx x44700000 spy x44070000 sb 1 ltn x41880000 ltm x41880000 tt x40e00000}}}}}}
+ toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 tt 7 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createOpenSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {960 540}
+ colorOverlay {0 0 0 0}
+ lifetime_type "all frames"
+ lifetime_start 17
+ lifetime_end 17
+ motionblur_shutter_offset_type centred
+ source_black_outside true
+ name RotoPaint4
+ xpos -833
+ ypos 1392
+}
+Invert {
+ name Invert6
+ xpos -833
+ ypos 1442
+}
+Blur {
+ size 400
+ name Blur4
+ xpos -833
+ ypos 1507
+}
+push $Nac0ffe00
+ColorCorrect {
+ shadows.saturation 1.14
+ shadows.contrast 1.2
+ shadows.gain 2.06
+ midtones.gain {1.016666651 0.9666666985 1.016666651 1}
+ highlights.gain {1.460000157 1.450000167 1.440000176 1.450000048}
+ lookup {shadow {curve x0.002050466835 1 s0 x0.04716087505 0 s0}
+   midtone {1-shadow-highlight}
+   highlight {curve x0.08186118305 0 s0 x0.1373816878 1 s0}}
+ name ColorCorrect6
+ xpos -989
+ ypos 1364
+}
+set Nac100800 [stack 0]
+Grade {
+ white 0.16
+ name Grade3
+ xpos -1136
+ ypos 1513
+}
+push $Nac100800
+Keymix {
+ inputs 3
+ channels rgb
+ maskChannel rgba.red
+ mix 0.66
+ name Keymix11
+ xpos -989
+ ypos 1513
+}
+Grade {
+ multiply {{curve x432 1 x441 20}}
+ name Grade9
+ xpos -989
+ ypos 1602
+ disable true
+}
+AppendClip {
+ inputs 2
+ fadeIn 5
+ fadeOut 5
+ dissolve 7
+ meta_from_first false
+ time ""
+ name AppendClip1
+ xpos -336
+ ypos 1505
+}
+Write {
+ file F:/Travail/MayaPythonMEL/PARTIEL/outNuke/test03.mp4
+ file_type mov
+ mov64_format "mp4 (MP4 (MPEG-4 Part 14))"
+ mov64_codec h264
+ mov_h264_codec_profile "High 4:2:0 8-bit"
+ mov64_pixel_format {
+  {0}
+ }
+ mov64_quality Custom
+ mov64_fast_start true
+ mov64_write_timecode true
+ mov64_gop_size 12
+ mov64_b_frames 0
+ mov64_bitrate 28000
+ mov64_bitrate_tolerance 0
+ mov64_quality_min 1
+ mov64_quality_max 3
+ transformType display
+ create_directories true
+ checkHashOnRead false
+ version 9
+ ocioColorspace scene_linear
+ display "sRGB - Display"
+ view "ACES 1.0 - SDR Video"
+ name Write1
+ xpos -336
+ ypos 1572
 }
